@@ -1,6 +1,6 @@
 from flask import g
 from flask_httpauth import HTTPTokenAuth
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from itsdangerous import JSONWebSignatureSerializer as Serializer
 
 auth = HTTPTokenAuth('Bearer')
 token_serializer = Serializer("***REMOVED***")
@@ -15,10 +15,10 @@ Web管理者キーはこれ(いつかサイト上に難読化して埋め込む�
 Bearer ***REMOVED***
 
 全体管理者キー(絶対に載せないこと) 権限:9
-Bearer ***REMOVED***
+未登録
 
 投稿用管理者キー(スクレイピングした際にはこれで投稿) 権限:3
-Bearer ***REMOVED***
+未登録
 '''
 
 '''
