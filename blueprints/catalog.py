@@ -90,7 +90,7 @@ def listCharacters():
     if page < 1:
         page = 1
     page -= 1
-    datas = g.db.get(f"SELECT charaID,charaName,charaDescription,charaBackground,charaIcon,charaBirthday,charaEndpoint,CNT,LIKES,LAST_UPDATE FROM info_chara NATURAL JOIN ( SELECT charaID, COUNT(charaID) AS CNT FROM illust_chara NATURAL JOIN info_chara GROUP BY charaID ) NATURAL JOIN ( SELECT charaID, TOTAL(illustLike) AS LIKES FROM illust_main NATURAL JOIN illust_chara GROUP BY charaID ) NATURAL JOIN ( SELECT charaID, MAX(illustID) AS LAST_UPDATE FROM illust_chara GROUP BY charaID ) ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
+    datas = g.db.get(f"SELECT charaID,charaName,charaDescription,charaBackground,charaIcon,charaBirthday,charaEndpoint,CNT,LIKES,LAST_UPDATE FROM info_chara NATURAL JOIN ( SELECT charaID, COUNT(charaID) AS CNT, MAX(illustID) AS LAST_UPDATE FROM illust_chara NATURAL JOIN info_chara GROUP BY charaID ) NATURAL JOIN ( SELECT charaID, TOTAL(illustLike) AS LIKES FROM illust_main NATURAL JOIN illust_chara GROUP BY charaID ) ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
     ls = [{
         "id": d[0],
         "name": d[1],
