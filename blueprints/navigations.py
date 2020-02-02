@@ -19,7 +19,7 @@ def nav_characters():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def nav_artist():
-    datas = g.db.get("SELECT artistName,artistID,COUNT(artistID) FROM info_artist natural join illust_main GROUP BY artistID ORDER BY COUNT(artistID) DESC LIMIT 5")
+    datas = g.db.get("SELECT artistName,illust_main.artistID,COUNT(illust_main.artistID) FROM info_artist INNER JOIN illust_main ON info_artist.artistID = illust_main.artistID GROUP BY illust_main.artistID ORDER BY COUNT(illust_main.artistID) DESC LIMIT 5")
     ls = [{"name":d[0],"id":d[1],"count":d[2]} for d in datas]
     return jsonify(status=200, data=ls)
 
