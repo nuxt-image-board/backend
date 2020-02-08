@@ -15,7 +15,12 @@ catalog_api = Blueprint('catalog_api', __name__)
 def listArtists():
     #　ソート : c(ount) もしくは d(ate)
     sortMethod = request.args.get('sort', default = "c", type = str)
-    sortMethod = "CNT" if sortMethod == "c" else "artistID"
+    if sortMethod == "d":
+        sortMethod = "LAST_UPDATE"
+    elif sortMethod == "l":
+        sortMethod = "LIKES"
+    else:
+        sortMethod = "CNT"
     # 順序　d(esc/降順/大きいものから) もしくは a(sc/昇順/小さいものから)
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
@@ -24,8 +29,7 @@ def listArtists():
     if page < 1:
         page = 1
     page -= 1
-    # 一旦 artistID, COUNT(artistID)を実行してそれに対して繋げて引き出している(少し最適なSQL)
-    datas = g.db.get(f"SELECT artistID,artistName,artistDescription,artistIcon,groupName,pixivID,pixiv,twitterID,twitter,mastodon,homepage,artistEndpoint,CNT,LIKES FROM (SELECT * FROM info_artist NATURAL JOIN (SELECT artistID,COUNT(artistID) AS CNT, TOTAL(illustLike) AS LIKES FROM illust_main GROUP BY artistID ORDER BY {sortMethod} {order})) LIMIT 20 OFFSET {page*20}")
+    datas = g.db.get(f"SELECT artistID,artistName,artistDescription,artistIcon,groupName,pixivID,pixiv,twitterID,twitter,mastodon,homepage,artistEndpoint,CNT,LIKES,LAST_UPDATE FROM info_artist NATURAL JOIN ( SELECT artistID,COUNT(artistID) AS CNT, TOTAL(illustLike) AS LIKES, MAX(illustID) AS LAST_UPDATE FROM illust_main GROUP BY artistID ) ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
     ls = [{
         "id": d[0],
         "name": d[1],
@@ -39,8 +43,8 @@ def listArtists():
         "mastodon": d[9],
         "homepage": d[10],
         "endpoint": "https://***REMOVED***",
-        "count": d[11],
-        "lcount": int(d[12])
+        "count": d[12],
+        "lcount": int(d[13])
     } for d in datas]
     return jsonify(status=200, data=ls)
 
@@ -50,7 +54,12 @@ def listArtists():
 def listTags():
     #　ソート : c(ount) もしくは d(ate)
     sortMethod = request.args.get('sort', default = "c", type = str)
-    sortMethod = "CNT" if sortMethod == "c" else "tagID"
+    if sortMethod == "d":
+        sortMethod = "LAST_UPDATE"
+    elif sortMethod == "l":
+        sortMethod = "LIKES"
+    else:
+        sortMethod = "CNT"
     # 順序　d(esc/降順/大きいものから) もしくは a(sc/昇順/小さいものから)
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
@@ -59,14 +68,15 @@ def listTags():
     if page < 1:
         page = 1
     page -= 1
-    datas = g.db.get(f"SELECT tagID,tagName,tagDescription,nsfw,CNT FROM (SELECT * FROM info_tag NATURAL JOIN (SELECT tagName,count(tagID) AS CNT FROM illust_tag NATURAL JOIN info_tag GROUP BY tagID ORDER BY {sortMethod} {order})) LIMIT 20 OFFSET {page*20}")
+    datas = g.db.get(f"SELECT tagID,tagName,tagDescription,nsfw,CNT,LIKES,LAST_UPDATE FROM info_tag NATURAL JOIN ( SELECT tagID, COUNT(tagID) AS CNT, MAX(illustID) AS LAST_UPDATE FROM illust_tag NATURAL JOIN info_tag GROUP BY tagID) NATURAL JOIN ( SELECT tagID, TOTAL(illustLike) AS LIKES FROM illust_main NATURAL JOIN illust_tag GROUP BY tagID ) ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
     ls = [{
         "id": d[0],
         "name": d[1],
         "description": d[2],
         "nsfw": d[3],
         "endpoint": "https://***REMOVED***",
-        "count": d[4]
+        "count": d[4],
+        "lcount": int(d[5])
     } for d in datas]
     return jsonify(status=200, data=ls)
 

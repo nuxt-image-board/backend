@@ -63,8 +63,9 @@ def searchByTag():
         status=200,
         message="found",
         data={
-            "title": tagName,
+            "title": "タグから検索 "+tagName,
             "count": illustCount,
+            "current": pageID,
             "pages": pages,
             "imgs":[{
                     "illustID": i[0],
@@ -136,8 +137,9 @@ def searchByArtist():
         status=200,
         message="found",
         data={
-            "title": artistName,
+            "title": "絵師さんから検索 "+artistName,
             "count": illustCount,
+            "current": pageID,
             "pages": pages,
             "imgs":[{
                     "illustID": i[0],
@@ -211,8 +213,9 @@ def searchByCharacter():
         status=200,
         message="found",
         data={
-            "title": charaName,
+            "title": "キャラクターから検索 "+charaName,
             "count": illustCount,
+            "current": pageID,
             "pages": pages,
             "imgs":[{
                     "illustID": i[0],
@@ -281,8 +284,9 @@ def searchByKeyword():
         status=200,
         message="found",
         data={
-            "title": keyword,
+            "title": "キーワードから検索 "+keyword,
             "count": illustCount,
+            "current": pageID,
             "pages": pages,
             "imgs":[{
                     "illustID": i[0],
@@ -301,7 +305,7 @@ def searchByKeyword():
             } for i in illusts]
         })
 
-@search_api.route('/',methods=["GET"], strict_slashes=False)
+@search_api.route('/all',methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByAll():
@@ -346,6 +350,7 @@ def searchByAll():
         data={
             "title": "全て",
             "count": illustCount,
+            "current": pageID,
             "pages": pages,
             "imgs":[{
                     "illustID": i[0],
