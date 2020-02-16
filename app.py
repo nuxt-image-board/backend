@@ -89,7 +89,10 @@ def createApp():
     app.config['JSON_AS_ASCII'] = False
     app.config['JSON_SORT_KEYS'] = False
     app.config['SECRET_KEY'] = '***REMOVED***'
-    app.config['UPLOAD_FOLDER'] = 'resources/img'
+    #最大20MB
+    app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
+    #app.config['UPLOAD_FOLDER'] = 'cdn/illusts'
+    app.config['UPLOAD_FOLDER'] = 'static/illusts'
     app.register_blueprint(accounts_api, url_prefix='/accounts')
     app.register_blueprint(artists_api, url_prefix='/artists')
     app.register_blueprint(arts_api, url_prefix='/arts')
@@ -163,4 +166,4 @@ def index():
 
 if __name__ == '__main__':
     apiLimiter.init_app(app)
-    app.run(debug=True)
+    app.run(host="***REMOVED***",debug=False)

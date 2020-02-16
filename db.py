@@ -13,13 +13,17 @@ class SQLHandler(object):
             self.conn.execute(sql,data)
         return self.conn.fetchall()
         
-    def edit(self,sql,data=None):
+    def commit(self):
+        self.db.commit()
+        
+    def edit(self,sql,data=None,autoCommit=True):
         try:
             if data == None:
                 self.conn.execute(sql)
             else:
                 self.conn.execute(sql,data)
-            self.db.commit()
+            if autoCommit:
+                self.db.commit()
             return True
         except Exception as e:
             print(e)
