@@ -16,6 +16,9 @@ class SQLHandler(object):
     def commit(self):
         self.db.commit()
         
+    def rollback(self):
+        self.db.rollback()
+        
     def edit(self,sql,data=None,autoCommit=True):
         try:
             if data == None:
