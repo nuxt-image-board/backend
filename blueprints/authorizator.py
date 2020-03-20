@@ -15,7 +15,7 @@ Web管理者キーはこれ(いつかサイト上に難読化して埋め込む�
 Bearer ***REMOVED***
 
 全体管理者キー(絶対に載せないこと) 権限:9
-未登録
+Bearer ***REMOVED***
 
 投稿用管理者キー(スクレイピングした際にはこれで投稿) 権限:3
 未登録
@@ -53,7 +53,7 @@ def verify_token(token):
         g.userApiSeq = data['seq']
         g.userPermission = data['permission']
         if g.db.has(
-            "user_main",
+            "data_user",
             "userID=? AND userApiSeq=? AND userPermission=?",
             (g.userID, g.userApiSeq, g.userPermission)
         ):

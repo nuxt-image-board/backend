@@ -32,7 +32,7 @@ def searchByTag():
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
-        "SELECT COUNT(illustID) FROM illust_tag WHERE tagID = ?",
+        "SELECT COUNT(illustID) FROM data_tag WHERE tagID = ?",
         (tagID,)
     )
     if not len(illustCount):
@@ -46,12 +46,12 @@ def searchByTag():
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-        "SELECT illustID,illust_main.artistID,illustName,illustDescription,"\
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName,artistIcon "\
-        + "FROM illust_main INNER JOIN info_artist ON illust_main.artistID = info_artist.artistID "\
+        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "WHERE illustID IN "\
-        + "(SELECT illustID FROM illust_tag WHERE tagID=?) "\
+        + "(SELECT illustID FROM data_tag WHERE tagID=?) "\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
         (tagID,)
@@ -78,8 +78,7 @@ def searchByTag():
                     "originUrl": i[7],
                     "originService": i[8],
                     "artist": {
-                        "name": i[9],
-                        "icon": i[10],
+                        "name": i[9]
                     },
             } for i in illusts]
         })
@@ -107,7 +106,7 @@ def searchByArtist():
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
-        "SELECT COUNT(illustID) FROM illust_main WHERE artistID = ?",
+        "SELECT COUNT(illustID) FROM data_illust WHERE artistID = ?",
         (artistID,)
     )
     if not len(illustCount):
@@ -121,11 +120,11 @@ def searchByArtist():
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-        "SELECT illustID,illust_main.artistID,illustName,illustDescription,"\
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName,artistIcon "\
-        + "FROM illust_main INNER JOIN info_artist ON illust_main.artistID = info_artist.artistID "\
-        + "WHERE illust_main.artistID = ? "\
+        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
+        + "WHERE data_illust.artistID = ? "\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
         (artistID,)
@@ -152,8 +151,7 @@ def searchByArtist():
                     "originUrl": i[7],
                     "originService": i[8],
                     "artist": {
-                        "name": i[9],
-                        "icon": i[10],
+                        "name": i[9]
                     },
             } for i in illusts]
         })
@@ -181,31 +179,30 @@ def searchByCharacter():
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
-        "SELECT COUNT(illustID) FROM illust_chara WHERE charaID = ?",
+        "SELECT COUNT(illustID) FROM data_tag WHERE tagID = ?",
         (charaID,)
     )
     if not len(illustCount):
         return jsonify(status=404, message="No matched illusts.")
     illustCount = illustCount[0][0]
     charaName = g.db.get(
-        "SELECT charaName FROM info_chara WHERE charaID = ?",
+        "SELECT tagName FROM info_tag WHERE tagID = ?",
         (charaID,)
     )[0][0]
     pages, extra_page = divmod(illustCount, per_page)
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-		"SELECT illustID,illust_main.artistID,illustName,illustDescription,"\
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName,artistIcon "\
-        + "FROM illust_main INNER JOIN info_artist ON illust_main.artistID = info_artist.artistID "\
+        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "WHERE illustID IN "\
-        + "(SELECT illustID FROM illust_chara WHERE charaID=?) "\
+        + "(SELECT illustID FROM data_tag WHERE tagID=?) "\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
         (charaID,)
     )
-    print(illusts)
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
@@ -228,8 +225,7 @@ def searchByCharacter():
                     "originUrl": i[7],
                     "originService": i[8],
                     "artist": {
-                        "name": i[9],
-                        "icon": i[10],
+                        "name": i[9]
                     },
             } for i in illusts]
         })
@@ -257,7 +253,7 @@ def searchByKeyword():
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
-        "SELECT COUNT(illustID) FROM illust_main "\
+        "SELECT COUNT(illustID) FROM data_illust "\
         + "WHERE illustName LIKE ?",
         ("%"+keyword+"%",)
     )
@@ -268,10 +264,10 @@ def searchByKeyword():
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-		"SELECT illustID,illust_main.artistID,illustName,illustDescription,"\
+		"SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName,artistIcon "\
-        + "FROM illust_main INNER JOIN info_artist ON illust_main.artistID = info_artist.artistID "\
+        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "WHERE illustName LIKE ?"\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
@@ -299,8 +295,7 @@ def searchByKeyword():
                     "originUrl": i[7],
                     "originService": i[8],
                     "artist": {
-                        "name": i[9],
-                        "icon": i[10],
+                        "name": i[9]
                     },
             } for i in illusts]
         })
@@ -325,7 +320,7 @@ def searchByAll():
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
-        "SELECT COUNT(illustID) FROM illust_main"
+        "SELECT COUNT(illustID) FROM data_illust"
     )
     if not len(illustCount):
         return jsonify(status=404, message="No matched illusts.")
@@ -334,10 +329,10 @@ def searchByAll():
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-		"SELECT illustID,illust_main.artistID,illustName,illustDescription,"\
+		"SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName,artistIcon "\
-        + "FROM illust_main INNER JOIN info_artist ON illust_main.artistID = info_artist.artistID "\
+        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1))
     )
@@ -363,8 +358,7 @@ def searchByAll():
                     "originUrl": i[7],
                     "originService": i[8],
                     "artist": {
-                        "name": i[9],
-                        "icon": i[10],
+                        "name": i[9]
                     },
             } for i in illusts]
         })

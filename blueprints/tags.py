@@ -26,14 +26,14 @@ def addTag():
     if g.db.has("info_tag","tagName=?",(tagName,)):
         return jsonify(status=409, message="The tag is already exist.")
     tagDescription = params.get('tagDescription', None)
-    nsfw = params.get('nsfw', None)
-    if nsfw in [1,"True","true"]:
-        nsfw = 1
+    nsfw = params.get('nsfw', 0)
+    if nsfw in ["1",1,"True","true"]:
+        nsfw = "1"
     else:
-        nsfw = 0
+        nsfw = "0"
     resp = g.db.edit(
-        "INSERT INTO `info_tag`(`tagName`,`tagDescription`,`nsfw`,`tagEndpoint`) VALUES (?,?,?,NULL);",
-        (tagName, tagDescription, nsfw)
+        "INSERT INTO `info_tag`(`userID`,`tagType`,`tagName`,`tagDescription`,`tagNsfw`) VALUES (?,0,?,?,?);",
+        (g.userID, tagName, tagDescription, nsfw)
     )
     if resp:
         createdID = g.db.get(
@@ -50,9 +50,9 @@ def removeTag(tagID):
     if not g.db.has("info_tag","tagID=?",(tagID,)):
         return jsonify(status=404, message="Specified tag was not found")
     illustCount = g.db.get(
-        "SELECT COUNT(tagID) FROM illust_tag WHERE tagID = ?", (tagID,)
+        "SELECT COUNT(tagID) FROM data_tag WHERE tagID = ?", (tagID,)
     )[0][0]
-    if not illustCount:
+    if illustCount != 0:
         return jsonify(status=409, message="The tag is locked by reference.")
     resp = g.db.edit("DELETE FROM info_tag WHERE tagID = ?", (tagID,))
     if resp:
@@ -72,10 +72,9 @@ def getTag(tagID):
     tagData = tagData[0]
     return jsonify(status=200, data={
         "id": tagData[0],
-        "name": tagData[1],
-        "description": tagData[2],
-        "nsfw": tagData[3],
-        "endpoint": tagData[4]
+        "name": tagData[3],
+        "description": tagData[4],
+        "nsfw": tagData[5]
     })
     
 @tags_api.route('/<int:tagID>/',methods=["PUT"], strict_slashes=False)
@@ -88,17 +87,16 @@ def editTag(tagID):
     validParams = [
         "tagName",
         "tagDescription",
-        "nsfw",
-        "endpoint"
+        "tagNsfw"
     ]
     params = {p:params[p] for p in params.keys() if p in validParams}
     if not params:
         return jsonify(status=400, message="Request parameters are invalid.")
-    for p in params.keys():
+    for p in params.keys(): 
         resp = g.db.edit(
             "UPDATE `info_tag` SET `%s`=? WHERE tagID=?"%(p),
             (params[p],tagID,)
         )
         if not resp:
-            return jsonify(status=500, message="Server bombed.")
+            return jsonify(status=400, message="The tagName is already exists.")
     return jsonify(status=200, message="Update succeed.")

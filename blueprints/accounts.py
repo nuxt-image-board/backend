@@ -46,7 +46,7 @@ def createAccountForce():
         return jsonify(status=400, message="Request parameters are not satisfied.")
     displayID = g.validate(params["displayId"],lengthMax=20)
     username = g.validate(params["username"],lengthMax=20)
-    if g.db.has("user_main",
+    if g.db.has("data_user",
         "userDisplayID=? OR userName=?",
         (displayID, username)
     ):
@@ -55,26 +55,26 @@ def createAccountForce():
     password = "***REMOVED***"+password
     password = hashlib.sha256(password.encode("utf8")).hexdigest()
     resp = g.db.edit(
-        "INSERT INTO `user_main`(`userDisplayID`, `userName`,`userPassword`) VALUES (?,?,?)",
+        "INSERT INTO `data_user`(`userDisplayID`, `userName`,`userPassword`) VALUES (?,?,?)",
         (displayID, username, password)
     )
     if not resp:
         return jsonify(status=500, message="Server bombed.")
     userID = g.db.get(
-        "SELECT userID FROM user_main WHERE userDisplayID=? AND userPassword=?",
+        "SELECT userID FROM data_user WHERE userDisplayID=? AND userPassword=?",
         (displayID, password)
     )[0][0]
     recordApiRequest(-1, "createAccount", param1=userID)
-    return jsonify(status=201, message="created")
+    return jsonify(status=201, message="created", userID=param1)
     
 @accounts_api.route('/<int:accountId>/force_generate_apiKey',methods=["GET"])
 def createApiKeyForce(accountId):
     apiSeq, apiPermission = g.db.get(
-        "SELECT userApiSeq,userPermission FROM user_main WHERE userID=?",
+        "SELECT userApiSeq,userPermission FROM data_user WHERE userID=?",
         (accountId,)
     )[0]
     resp = g.db.edit(
-        "UPDATE user_main SET userApiSeq = userApiSeq + 1 WHERE userID=?",
+        "UPDATE data_user SET userApiSeq = userApiSeq + 1 WHERE userID=?",
         (accountId,)
     )
     if not resp:
@@ -103,7 +103,7 @@ def createAccount():
         return jsonify(status=400, message="Request parameters are not satisfied.")
     displayID = g.validate(params["displayId"],lengthMax=20)
     username = g.validate(params["username"],lengthMax=20)
-    if g.db.has("user_main",
+    if g.db.has("data_user",
         "userDisplayID=? OR userName=?",
         (displayID, username)
     ):
@@ -112,13 +112,13 @@ def createAccount():
     password = "***REMOVED***"+password
     password = hashlib.sha256(password.encode("utf8")).hexdigest()
     resp = g.db.edit(
-        "INSERT INTO `user_main`(`userDisplayID`, `userName`,`userPassword`) VALUES (?,?,?)",
+        "INSERT INTO `data_user`(`userDisplayID`, `userName`,`userPassword`) VALUES (?,?,?)",
         (displayID, username, password)
     )
     if not resp:
         return jsonify(status=500, message="Server bombed.")
     userID = g.db.get(
-        "SELECT userID FROM user_main WHERE userDisplayID=? AND userPassword=?",
+        "SELECT userID FROM data_user WHERE userDisplayID=? AND userPassword=?",
         (displayID, password)
     )[0][0]
     recordApiRequest(g.userID, "createAccount", param1=userID)
@@ -129,7 +129,7 @@ def createAccount():
 @apiLimiter.limit(handleApiPermission)
 def getAccount(accountId):
     resp = g.db.get(
-        "SELECT userID,userDisplayID,userName,userFavorite FROM user_main WHERE userID=?",
+        "SELECT userID,userDisplayID,userName,userFavorite FROM data_user WHERE userID=?",
         (accountId,)
     )
     if not resp or accountId in [0,1,2]:
@@ -157,11 +157,11 @@ def createApiKey(accountId):
     if g.userPermission < 5 or accountId in [1,2,3]:
         return jsonify(status=400, message="You don't have enough permissions.")
     apiSeq, apiPermission = g.db.get(
-        "SELECT userApiSeq,userPermission FROM user_main WHERE userID=?",
+        "SELECT userApiSeq,userPermission FROM data_user WHERE userID=?",
         (accountId,)
     )[0]
     resp = g.db.edit(
-        "UPDATE user_main SET userApiSeq = userApiSeq + 1 WHERE userID=?",
+        "UPDATE data_user SET userApiSeq = userApiSeq + 1 WHERE userID=?",
         (accountId,)
     )
     if not resp:
@@ -188,7 +188,7 @@ def destroyAccount(accountId):
     if not resp:
         return jsonify(status=500, message="Server bombed.")
     resp = g.db.edit(
-        "DELETE FROM `user_main` WHERE userID=?",
+        "DELETE FROM `data_user` WHERE userID=?",
         accountId
     )
     if not resp:
@@ -223,7 +223,7 @@ def editAccount():
             params[p] = "***REMOVED***"+password
             params[p] = hashlib.sha256(password.encode("utf8")).hexdigest()
         resp = g.db.edit(
-            "UPDATE `user_main` SET `%s`=? WHERE userID=?"%(p),
+            "UPDATE `data_user` SET `%s`=? WHERE userID=?"%(p),
             (params[p],userID,)
         )
         if not resp:

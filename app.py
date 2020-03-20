@@ -11,8 +11,9 @@ TODO:
 　(authorId とかなんかそういうカラムを追加する)
 
 <<アカウント>>
-POST   /accounts
 POST   /accounts/force_generate_account
+GET    /accounts/force_generate_apiKey
+POST   /accounts
 GET    /accounts/<int:accountId>
 PUT    /accounts/<int:accountId>
 DELETE /accounts/<int:accountId>
@@ -101,6 +102,7 @@ def createApp():
     app.register_blueprint(navigations_api, url_prefix='/navigations')
     app.register_blueprint(search_api, url_prefix='/search')
     app.register_blueprint(tags_api, url_prefix='/tags')
+    app.register_blueprint(scrape_api, url_prefix='/scrape')
     return app
 app = createApp()
 CORS(app)
@@ -166,4 +168,4 @@ def index():
 
 if __name__ == '__main__':
     apiLimiter.init_app(app)
-    app.run(host="***REMOVED***",debug=False)
+    app.run(debug=False)

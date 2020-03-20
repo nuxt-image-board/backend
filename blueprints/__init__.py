@@ -6,6 +6,7 @@ from .characters import characters_api
 from .navigations import navigations_api
 from .search import search_api
 from .tags import tags_api
+from .scrape import scrape_api
 from .authorizator import auth
 from .limiter import apiLimiter
 
@@ -18,6 +19,7 @@ __all__ = [
     "navigations_api",
     "search_api",
     "tags_api",
+    "scrape_api",
     "auth",
     "apiLimiter"
 ]

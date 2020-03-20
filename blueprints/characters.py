@@ -20,19 +20,16 @@ def addCharacter():
         return jsonify(status=400, message="Request parameters are not satisfied.")
     params = {p: g.validate(params[p]) for p in params.keys()}
     charaName = params.get('charaName')
-    if g.db.has("info_chara","charaName=?",(charaName,)):
+    if g.db.has("info_tag","tagName=?",(charaName,)):
         return jsonify(status=409, message="The character is already exist.")
     charaDescription = params.get('charaDescription', None)
-    charaBackground = params.get('charaBackground', None)
-    charaIcon = params.get('charaIcon', None)
-    charaBirthday = params.get('charaBirthday', None)
     resp = g.db.edit(
-        "INSERT INTO `info_chara`(`charaName`,`charaDescription`,`charaBackground`,`charaIcon`,`charaBirthday`,`charaEndpoint`) VALUES (?,?,?,?,?,NULL)",
-        (charaName, charaDescription, charaBackground, charaIcon, charaBirthday)
+        "INSERT INTO `info_tag`(`userID`,`tagName`,`tagDescription`,`tagNsfw`,`tagType`) VALUES (?,?,?,0,1)",
+        (g.userID, charaName, charaDescription, )
     )
     if resp:
         createdID = g.db.get(
-            "SELECT charaID FROM info_chara WHERE charaName = ?",(charaName,)
+            "SELECT tagID FROM info_tag WHERE tagName=?",(charaName,)
         )[0][0]
         return jsonify(status=200, message="Created", charaID=createdID)
     else:
@@ -42,14 +39,14 @@ def addCharacter():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def removeCharacter(charaID):
-    if not g.db.has("info_chara","charaID=?",(charaID,)):
+    if not g.db.has("info_tag","tagID=?",(charaID,)):
         return jsonify(status=404, message="Specified character was not found")
     illustCount = g.db.get(
-        "SELECT COUNT(charaID) FROM illust_main WHERE charaID = ?", (charaID,)
+        "SELECT COUNT(tagID) FROM data_tag WHERE tagID =?", (charaID,)
     )[0][0]
-    if not illustCount:
+    if illustCount != 0:
         return jsonify(status=409, message="The character is locked by reference.")
-    resp = g.db.edit("DELETE FROM info_chara WHERE charaID = ?", (charaID,))
+    resp = g.db.edit("DELETE FROM info_tag WHERE tagID = ?", (charaID,))
     if resp:
         return jsonify(status=200, message="Delete succeed.")
     else:
@@ -60,18 +57,16 @@ def removeCharacter(charaID):
 @apiLimiter.limit(handleApiPermission)
 def getCharacter(charaID):
     charaData = g.db.get(
-        "SELECT * FROM info_chara WHERE charaID = ?", (charaID,)
+        "SELECT * FROM info_tag WHERE tagID=? AND tagType=1", (charaID,)
     )
     if len(charaData) < 1:
         return jsonify(status=404, message="Specified character was not found")
     charaData = charaData[0]
     return jsonify(status=200, data={
         "id": charaData[0],
-        "name": charaData[1],
-        "description": charaData[2],
-        "background": charaData[3],
-        "icon": charaData[4],
-        "birthday": charaData[5]
+        "name": charaData[3],
+        "description": charaData[4],
+        "nsfw": charaData[5]
     })
     
 @characters_api.route('/<int:charaID>',methods=["PUT"], strict_slashes=False)
@@ -81,19 +76,14 @@ def editCharacter(charaID):
     params = request.get_json()
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")
-    validParams = [
-        "charaName",
-        "charaDescription",
-        "charaIcon",
-        "charaBirthday",
-        "charaEndpoint"
-    ]
-    if len(params.keys() - validParams) == len(params.keys()):
-        return jsonify(status=400, message="Request parameters are not satisfied.")
-    params = {p:params[p] for p in params.keys() if p in validParams}
+    validParams = {
+        "charaName":"tagName",
+        "charaDescription":"tagDescription"
+    }
+    params = {validParams[p]:params[p] for p in params.keys() if p in validParams.keys()}
     for p in params.keys():
         resp = g.db.edit(
-            "UPDATE `info_chara` SET `%s`=? WHERE charaID=?"%(p),
+            "UPDATE `info_tag` SET `%s`=? WHERE tagID=?"%(p),
             (params[p],charaID,)
         )
         if not resp:
