@@ -102,11 +102,8 @@ def listCharacters():
         "id": d[0],
         "name": d[1],
         "description": d[2],
-        "bg": d[3],
-        "icon": d[4],
-        "birthday": d[5],
-        "endpoint": d[6],
-        "count": d[7],
-        "lcount": d[8]
+        "nsfw": d[3],
+        "count": d[4],
+        "lcount": int(d[5])
     } for d in datas]
     return jsonify(status=200, data=ls)
