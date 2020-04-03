@@ -14,6 +14,8 @@ TODO:
 POST   /accounts/force_generate_account
 GET    /accounts/force_generate_apiKey
 POST   /accounts
+POST   /accounts/login
+POST   /accounts/login_line
 GET    /accounts/<int:accountId>
 PUT    /accounts/<int:accountId>
 DELETE /accounts/<int:accountId>

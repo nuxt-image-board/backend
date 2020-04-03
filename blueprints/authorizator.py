@@ -51,6 +51,7 @@ def verify_token(token):
     if 'id' in data:
         g.userID = data['id']
         g.userApiSeq = data['seq']
+        g.userApiKey = token
         g.userPermission = data['permission']
         if g.db.has(
             "data_user",

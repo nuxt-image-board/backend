@@ -62,6 +62,7 @@ def getCharacter(charaID):
     if len(charaData) < 1:
         return jsonify(status=404, message="Specified character was not found")
     charaData = charaData[0]
+    print(charaData)
     return jsonify(status=200, data={
         "id": charaData[0],
         "name": charaData[3],

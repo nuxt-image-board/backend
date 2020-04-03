@@ -48,7 +48,7 @@ def searchByTag():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "WHERE illustID IN "\
         + "(SELECT illustID FROM data_tag WHERE tagID=?) "\
@@ -63,7 +63,7 @@ def searchByTag():
         status=200,
         message="found",
         data={
-            "title": "タグから検索 "+tagName,
+            "title": tagName,
             "count": illustCount,
             "current": pageID,
             "pages": pages,
@@ -77,8 +77,9 @@ def searchByTag():
                     "like": i[6],
                     "originUrl": i[7],
                     "originService": i[8],
+                    "nsfw": i[9],
                     "artist": {
-                        "name": i[9]
+                        "name": i[10]
                     },
             } for i in illusts]
         })
@@ -122,7 +123,7 @@ def searchByArtist():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "WHERE data_illust.artistID = ? "\
         + "ORDER BY %s %s "%(sortMethod, order)\
@@ -136,7 +137,7 @@ def searchByArtist():
         status=200,
         message="found",
         data={
-            "title": "絵師さんから検索 "+artistName,
+            "title": artistName,
             "count": illustCount,
             "current": pageID,
             "pages": pages,
@@ -150,8 +151,9 @@ def searchByArtist():
                     "like": i[6],
                     "originUrl": i[7],
                     "originService": i[8],
+                    "nsfw": i[9],
                     "artist": {
-                        "name": i[9]
+                        "name": i[10]
                     },
             } for i in illusts]
         })
@@ -195,7 +197,7 @@ def searchByCharacter():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "WHERE illustID IN "\
         + "(SELECT illustID FROM data_tag WHERE tagID=?) "\
@@ -210,7 +212,7 @@ def searchByCharacter():
         status=200,
         message="found",
         data={
-            "title": "キャラクターから検索 "+charaName,
+            "title": charaName,
             "count": illustCount,
             "current": pageID,
             "pages": pages,
@@ -224,8 +226,9 @@ def searchByCharacter():
                     "like": i[6],
                     "originUrl": i[7],
                     "originService": i[8],
+                    "nsfw": i[9],
                     "artist": {
-                        "name": i[9]
+                        "name": i[10]
                     },
             } for i in illusts]
         })
@@ -266,7 +269,7 @@ def searchByKeyword():
     illusts = g.db.get(
 		"SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "WHERE illustName LIKE ?"\
         + "ORDER BY %s %s "%(sortMethod, order)\
@@ -280,7 +283,7 @@ def searchByKeyword():
         status=200,
         message="found",
         data={
-            "title": "キーワードから検索 "+keyword,
+            "title": keyword,
             "count": illustCount,
             "current": pageID,
             "pages": pages,
@@ -294,8 +297,9 @@ def searchByKeyword():
                     "like": i[6],
                     "originUrl": i[7],
                     "originService": i[8],
+                    "nsfw":i[9],
                     "artist": {
-                        "name": i[9]
+                        "name": i[10]
                     },
             } for i in illusts]
         })
@@ -331,7 +335,7 @@ def searchByAll():
     illusts = g.db.get(
 		"SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
         + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,artistName "\
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1))
@@ -357,8 +361,9 @@ def searchByAll():
                     "like": i[6],
                     "originUrl": i[7],
                     "originService": i[8],
+                    "nsfw": i[9],
                     "artist": {
-                        "name": i[9]
+                        "name": i[10]
                     },
             } for i in illusts]
         })
