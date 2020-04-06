@@ -170,4 +170,4 @@ def index():
 
 if __name__ == '__main__':
     apiLimiter.init_app(app)
-    app.run(debug=False)
+    app.run(host="***REMOVED***",debug=False)
