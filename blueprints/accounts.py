@@ -112,7 +112,8 @@ def createAccount():
     )[0][0]
     # 使う招待コードを1つ取る
     inviteSeq = g.db.get(
-        "SELECT inviteSeq FROM data_invite WHERE invitee IS NULL AND inviteCode=? ORDER BY inviteSeq ASC LIMIT 1"
+        "SELECT inviteSeq FROM data_invite WHERE invitee IS NULL AND inviteCode=? ORDER BY inviteSeq ASC LIMIT 1",
+        (inviteCode, )
     )[0][0]
     # 招待コードを利用済みにする
     resp = g.db.edit(
@@ -170,7 +171,6 @@ def loginAccountWithForm():
             "client_secret": LINE_CHANNEL_SECRET
         }
         lineResp = requests.post(LINE_ENDPOINT, headers=headers, data=params).json()
-        print(lineResp)
         if 'error' in lineResp:
             return jsonify(status=401, message="line authorization failed")
         lineIDToken = lineResp["id_token"]

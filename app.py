@@ -2,6 +2,7 @@ from flask import Flask, g, request, jsonify, escape, Blueprint
 from blueprints import *
 from db import SQLHandler
 from flask_cors import CORS
+import html
 
 '''
 ごちイラAPI
@@ -73,8 +74,9 @@ GET    /tags/<int:tagId>
 PUT    /tags/<int:tagId>
 
 <<スクレイピング>>
-POST /twitter
-POST /pixiv
+POST /scrape/twitter
+POST /scrape/pixiv
+POSt /scrape/upload
 
 <<通報>>
 POST /art/ID
@@ -94,8 +96,8 @@ def createApp():
     app.config['SECRET_KEY'] = '***REMOVED***'
     #最大20MB
     app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
-    #app.config['UPLOAD_FOLDER'] = 'cdn/illusts'
-    app.config['UPLOAD_FOLDER'] = 'static/illusts'
+    app.config['ILLUST_FOLDER'] = 'static/illusts'
+    app.config['TEMP_FOLDER'] = 'static/temp'
     app.register_blueprint(accounts_api, url_prefix='/accounts')
     app.register_blueprint(artists_api, url_prefix='/artists')
     app.register_blueprint(arts_api, url_prefix='/arts')
@@ -113,7 +115,7 @@ CORS(app)
 　いろんなとこで使うユーティリティ
 '''
 
-def validateRequestData(text, lengthMin=1, lengthMax=500):
+def validateRequestData(text, lengthMin=1, lengthMax=500, escape=True):
     '''投稿されるデータを検証して弾く'''
     ng_words = [
         "{",
@@ -134,7 +136,9 @@ def validateRequestData(text, lengthMin=1, lengthMax=500):
         text = text.replace(ng,"")
     text = text[:lengthMax]
     if text == "" or len(text) < lengthMin:
-        raise ValueError("Text not found")
+        return ""
+    if escape:
+        return html.escape(text)
     return text
 
 # リクエストが来るたびにデータベースにつなぐ　TODO: MySQLに変更
@@ -144,6 +148,20 @@ def start_db_connection():
     g.validate = validateRequestData
     g.userPermission = None
     return
+
+# リクエストの処理が完成するたびにヘッダーにセキュリティ上のあれをつける
+@app.after_request
+def add_header(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['X-Download-Options'] = 'noopen'
+    response.headers['X-Usagi-ApiVersion'] = '1.0.0'
+    response.headers['X-Usagi-WebVersion'] = '1.0.0'
+    response.headers['Content-Security-Policy'] = 'default-src \'self\' ***REMOVED*** *.example.net'
+    # HSTS
+    #response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubdomains'
+    return response
 
 # リクエストの処理が終わるたびにデータベースを閉じる　TODO: MySQLに変更
 @app.teardown_appcontext

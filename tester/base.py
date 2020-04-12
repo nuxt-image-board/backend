@@ -10,7 +10,7 @@ Bearer ***REMOVED***
 '''
 
 class BaseClient():
-    def __init__(self,address="http://localhost:5000",token="***REMOVED***"):
+    def __init__(self,address="http://***REMOVED***:5000",token="***REMOVED***"):
         self.address = address
         self.headers = {
             "Authorization": "Bearer "+ token,
