@@ -1,22 +1,15 @@
-from flask import Flask, g, request, jsonify, escape, Blueprint
-from blueprints import *
-from db import SQLHandler
+from flask import Flask
 from flask_cors import CORS
-import html
+from request_handler import * 
+from blueprints import *
 
 '''
 ごちイラAPI
 
-TODO:
-　各種データを追加したのが誰かをわかるようにすること
-　(authorId とかなんかそういうカラムを追加する)
-
 <<アカウント>>
-POST   /accounts/force_generate_account
-GET    /accounts/force_generate_apiKey
 POST   /accounts
-POST   /accounts/login
-POST   /accounts/login_line
+POST   /accounts/login/form
+POST   /accounts/login/line
 GET    /accounts/<int:accountId>
 PUT    /accounts/<int:accountId>
 DELETE /accounts/<int:accountId>
@@ -91,13 +84,15 @@ POST /user/ID
 '''
 def createApp():
     app = Flask(__name__)
+    # 設定
     app.config['JSON_AS_ASCII'] = False
     app.config['JSON_SORT_KEYS'] = False
     app.config['SECRET_KEY'] = '***REMOVED***'
-    #最大20MB
     app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
     app.config['ILLUST_FOLDER'] = 'static/illusts'
     app.config['TEMP_FOLDER'] = 'static/temp'
+    # 各ページルールを登録
+    app.add_url_rule('/', 'index', app_index, strict_slashes=False)
     app.register_blueprint(accounts_api, url_prefix='/accounts')
     app.register_blueprint(artists_api, url_prefix='/artists')
     app.register_blueprint(arts_api, url_prefix='/arts')
@@ -107,85 +102,21 @@ def createApp():
     app.register_blueprint(search_api, url_prefix='/search')
     app.register_blueprint(tags_api, url_prefix='/tags')
     app.register_blueprint(scrape_api, url_prefix='/scrape')
+    # リクエスト共通処理の登録
+    app.before_request(app_before_request)
+    app.after_request(app_after_request)
+    app.teardown_appcontext(app_teardown_appcontext)
+    # エラーハンドリングの登録
+    app.register_error_handler(401, error_unauthorized)
+    app.register_error_handler(404, error_not_found)
+    app.register_error_handler(429, error_ratelimit)
+    app.register_error_handler(500, error_server_bombed)
+    # Flask-Limiterの登録
+    apiLimiter.init_app(app)
+    # Flask-CORSの登録
+    CORS(app)
     return app
 app = createApp()
-CORS(app)
-
-'''
-　いろんなとこで使うユーティリティ
-'''
-
-def validateRequestData(text, lengthMin=1, lengthMax=500, escape=True):
-    '''投稿されるデータを検証して弾く'''
-    ng_words = [
-        "{",
-        "}",
-        "[",
-        "]",
-        "request",
-        "config",
-        "<script>",
-        "</script>",
-        "class",
-        "import",
-        "__globals__",
-        "__getitem__",
-        "self"
-    ]
-    for ng in ng_words:
-        text = text.replace(ng,"")
-    text = text[:lengthMax]
-    if text == "" or len(text) < lengthMin:
-        return ""
-    if escape:
-        return html.escape(text)
-    return text
-
-# リクエストが来るたびにデータベースにつなぐ　TODO: MySQLに変更
-@app.before_request
-def start_db_connection():
-    g.db = SQLHandler()
-    g.validate = validateRequestData
-    g.userPermission = None
-    return
-
-# リクエストの処理が完成するたびにヘッダーにセキュリティ上のあれをつける
-@app.after_request
-def add_header(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['X-Download-Options'] = 'noopen'
-    response.headers['X-Usagi-ApiVersion'] = '1.0.0'
-    response.headers['X-Usagi-WebVersion'] = '1.0.0'
-    response.headers['Content-Security-Policy'] = 'default-src \'self\' ***REMOVED*** *.example.net'
-    # HSTS
-    #response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubdomains'
-    return response
-
-# リクエストの処理が終わるたびにデータベースを閉じる　TODO: MySQLに変更
-@app.teardown_appcontext
-def close_db_connection(exception):
-    db = getattr(g, 'db', None)
-    if db is not None:
-        db.close()
-
-# 認証失敗時のエラー
-@app.errorhandler(401)
-def unauthorized_handler(e):
-    return jsonify(status=401, message="Authorization failed.")
-
-# レート制限を超えたときのエラー
-@app.errorhandler(429)
-def ratelimit_handler(e):
-    return jsonify(status=429, message="ratelimit exceeded %s" % e.description)
-
-# トップページ
-@app.route('/', strict_slashes=False)
-@apiLimiter.exempt
-def index():
-    return jsonify(status=200, message="API server is running.")
 
 if __name__ == '__main__':
-    apiLimiter.init_app(app)
     app.run(host="***REMOVED***",debug=False)

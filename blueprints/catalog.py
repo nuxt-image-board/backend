@@ -29,7 +29,7 @@ def listArtists():
     if page < 1:
         page = 1
     page -= 1
-    datas = g.db.get(f"SELECT artistID,artistName,artistDescription,groupName,pixivID,twitterID,mastodon,homepage,CNT,LIKES,LAST_UPDATE FROM info_artist NATURAL JOIN ( SELECT artistID,COUNT(artistID) AS CNT, TOTAL(illustLike) AS LIKES, MAX(illustID) AS LAST_UPDATE FROM data_illust GROUP BY artistID ) ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
+    datas = g.db.get(f"SELECT artistID,artistName,artistDescription,groupName,pixivID,twitterID,mastodon,homepage,CNT,LIKES,LAST_UPDATE FROM info_artist NATURAL JOIN ( SELECT artistID,COUNT(artistID) AS CNT, SUM(illustLike) AS LIKES, MAX(illustID) AS LAST_UPDATE FROM data_illust GROUP BY artistID ) AS T1 ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
     ls = [{
         "id": d[0],
         "name": d[1],
@@ -65,7 +65,7 @@ def listTags():
     if page < 1:
         page = 1
     page -= 1
-    datas = g.db.get(f"SELECT tagID,tagName,tagDescription,tagNsfw,CNT,LIKES,LAST_UPDATE FROM info_tag NATURAL JOIN ( SELECT tagID, COUNT(tagID) AS CNT, MAX(illustID) AS LAST_UPDATE FROM data_tag NATURAL JOIN info_tag GROUP BY tagID) NATURAL JOIN ( SELECT tagID, TOTAL(illustLike) AS LIKES FROM data_illust NATURAL JOIN data_tag GROUP BY tagID ) WHERE tagType=0  ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
+    datas = g.db.get(f"SELECT tagID,tagName,tagDescription,tagNsfw,CNT,LIKES,LAST_UPDATE FROM info_tag NATURAL JOIN ( SELECT tagID, COUNT(tagID) AS CNT, MAX(illustID) AS LAST_UPDATE FROM data_tag NATURAL JOIN info_tag GROUP BY tagID) AS T1 NATURAL JOIN ( SELECT tagID, SUM(illustLike) AS LIKES FROM data_illust NATURAL JOIN data_tag GROUP BY tagID ) AS T2 WHERE tagType=0  ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
     ls = [{
         "id": d[0],
         "name": d[1],
@@ -97,7 +97,7 @@ def listCharacters():
     if page < 1:
         page = 1
     page -= 1
-    datas = g.db.get(f"SELECT tagID,tagName,tagDescription,tagNsfw,CNT,LIKES,LAST_UPDATE FROM info_tag NATURAL JOIN ( SELECT tagID, COUNT(tagID) AS CNT, MAX(illustID) AS LAST_UPDATE FROM data_tag NATURAL JOIN info_tag GROUP BY tagID) NATURAL JOIN ( SELECT tagID, TOTAL(illustLike) AS LIKES FROM data_illust NATURAL JOIN data_tag GROUP BY tagID ) WHERE tagType=1  ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
+    datas = g.db.get(f"SELECT tagID,tagName,tagDescription,tagNsfw,CNT,LIKES,LAST_UPDATE FROM info_tag NATURAL JOIN ( SELECT tagID, COUNT(tagID) AS CNT, MAX(illustID) AS LAST_UPDATE FROM data_tag NATURAL JOIN info_tag GROUP BY tagID) AS T1 NATURAL JOIN ( SELECT tagID, SUM(illustLike) AS LIKES FROM data_illust NATURAL JOIN data_tag GROUP BY tagID ) AS T2 WHERE tagType=1  ORDER BY {sortMethod} {order} LIMIT 20 OFFSET {page*20}")
     ls = [{
         "id": d[0],
         "name": d[1],

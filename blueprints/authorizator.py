@@ -55,7 +55,7 @@ def verify_token(token):
         g.userPermission = data['permission']
         if g.db.has(
             "data_user",
-            "userID=? AND userApiSeq=? AND userPermission=?",
+            "userID=%s AND userApiSeq=%s AND userPermission=%s",
             (g.userID, g.userApiSeq, g.userPermission)
         ):
             return True
