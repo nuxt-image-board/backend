@@ -11,7 +11,7 @@ navigations_api = Blueprint('navigations_api', __name__)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def nav_characters():
-    datas = g.db.get("SELECT tagName,tagID,COUNT(tagID) as CNT FROM data_tag natural join info_tag GROUP BY tagID HAVING tagType=1 ORDER BY CNT LIMIT 5")
+    datas = g.db.get("SELECT tagName, data_tag.tagID, COUNT(data_tag.tagID) AS CNT FROM data_tag INNER JOIN info_tag ON info_tag.tagID = data_tag.tagID WHERE tagType = 1 GROUP BY data_tag.tagID ORDER BY CNT DESC LIMIT 5")
     ls = [{"name":d[0],"id":d[1],"count":d[2]} for d in datas]
     return jsonify(status=200, data=ls)
 
@@ -27,6 +27,6 @@ def nav_artist():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def nav_tag():
-    datas = g.db.get("SELECT tagName,tagID,COUNT(tagID) as CNT FROM data_tag natural join info_tag GROUP BY tagID HAVING tagType=0 ORDER BY CNT LIMIT 5")
+    datas = g.db.get("SELECT tagName, data_tag.tagID, COUNT(data_tag.tagID) AS CNT FROM data_tag INNER JOIN info_tag ON info_tag.tagID = data_tag.tagID WHERE tagType = 0 GROUP BY data_tag.tagID ORDER BY CNT DESC LIMIT 5")
     ls = [{"name":d[0],"id":d[1],"count":d[2]} for d in datas]
     return jsonify(status=200, data=ls)

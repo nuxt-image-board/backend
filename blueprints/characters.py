@@ -20,16 +20,16 @@ def addCharacter():
         return jsonify(status=400, message="Request parameters are not satisfied.")
     params = {p: g.validate(params[p]) for p in params.keys()}
     charaName = params.get('charaName')
-    if g.db.has("info_tag","tagName=?",(charaName,)):
+    if g.db.has("info_tag","tagName=%s",(charaName,)):
         return jsonify(status=409, message="The character is already exist.")
     charaDescription = params.get('charaDescription', None)
     resp = g.db.edit(
-        "INSERT INTO `info_tag`(`userID`,`tagName`,`tagDescription`,`tagNsfw`,`tagType`) VALUES (?,?,?,0,1)",
+        "INSERT INTO `info_tag`(`userID`,`tagName`,`tagDescription`,`tagNsfw`,`tagType`) VALUES (%s,%s,%s,0,1)",
         (g.userID, charaName, charaDescription, )
     )
     if resp:
         createdID = g.db.get(
-            "SELECT tagID FROM info_tag WHERE tagName=?",(charaName,)
+            "SELECT tagID FROM info_tag WHERE tagName=%s",(charaName,)
         )[0][0]
         return jsonify(status=200, message="Created", charaID=createdID)
     else:
@@ -39,14 +39,14 @@ def addCharacter():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def removeCharacter(charaID):
-    if not g.db.has("info_tag","tagID=?",(charaID,)):
+    if not g.db.has("info_tag","tagID=%s",(charaID,)):
         return jsonify(status=404, message="Specified character was not found")
     illustCount = g.db.get(
-        "SELECT COUNT(tagID) FROM data_tag WHERE tagID =?", (charaID,)
+        "SELECT COUNT(tagID) FROM data_tag WHERE tagID =%s", (charaID,)
     )[0][0]
     if illustCount != 0:
         return jsonify(status=409, message="The character is locked by reference.")
-    resp = g.db.edit("DELETE FROM info_tag WHERE tagID = ?", (charaID,))
+    resp = g.db.edit("DELETE FROM info_tag WHERE tagID = %s", (charaID,))
     if resp:
         return jsonify(status=200, message="Delete succeed.")
     else:
@@ -57,7 +57,7 @@ def removeCharacter(charaID):
 @apiLimiter.limit(handleApiPermission)
 def getCharacter(charaID):
     charaData = g.db.get(
-        "SELECT * FROM info_tag WHERE tagID=? AND tagType=1", (charaID,)
+        "SELECT * FROM info_tag WHERE tagID=%s AND tagType=1", (charaID,)
     )
     if len(charaData) < 1:
         return jsonify(status=404, message="Specified character was not found")
@@ -84,7 +84,7 @@ def editCharacter(charaID):
     params = {validParams[p]:params[p] for p in params.keys() if p in validParams.keys()}
     for p in params.keys():
         resp = g.db.edit(
-            "UPDATE `info_tag` SET `%s`=? WHERE tagID=?"%(p),
+            "UPDATE `info_tag` SET `%s`=%s WHERE tagID=%s"%(p),
             (params[p],charaID,)
         )
         if not resp:

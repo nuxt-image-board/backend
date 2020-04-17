@@ -21,3 +21,14 @@ for e in getEndpoints:
         print(cl.get(e,params=params).json())
     except:
         pass
+        
+# 画像検索 
+with open("1.png","rb") as f:
+    files = {"file": ("1.png", f.read(), "image/png")}
+scrapeEndpoint = "/search/image"
+resp = cl.post(scrapeEndpoint, files=files).json()
+print(resp)
+
+scrapeEndpoint = "/search/image/saucenao"
+resp = cl.post(scrapeEndpoint, files=files).json()
+print(resp)

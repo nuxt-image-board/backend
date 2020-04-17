@@ -28,7 +28,7 @@ def addArtist():
         return jsonify(status=400, message="Request parameter is invalid.")
     artistName = params.get('artistName')
     # 既存の作者か確認
-    if g.db.has("info_artist","artistName=?",(artistName,)):
+    if g.db.has("info_artist","artistName=%s",(artistName,)):
         return jsonify(status=409, message="The artist is already exist.")
     #　変数を1つずつ取り出す
     artistDescription = params.get('artistDescription', None)
@@ -39,12 +39,12 @@ def addArtist():
     homepage = params.get('homepage', None)
     userID = g.userID
     resp = g.db.edit(
-        "INSERT INTO `info_artist`(`userID`,`artistName`,`artistDescription`,`groupName`,`pixivID`,`twitterID`,`mastodon`,`homepage`) VALUES (?,?,?,?,?,?,?,?);",
+        "INSERT INTO `info_artist`(`userID`,`artistName`,`artistDescription`,`groupName`,`pixivID`,`twitterID`,`mastodon`,`homepage`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",
         (userID,artistName,artistDescription,groupName,pixivID,twitterID,mastodon,homepage)
     )
     if resp:
         createdID = g.db.get(
-            "SELECT artistID FROM info_artist WHERE artistName = ?",(artistName,)
+            "SELECT artistID FROM info_artist WHERE artistName = %s",(artistName,)
         )[0][0]
         recordApiRequest(userID, "addArtist", param1=createdID)
         return jsonify(status=201, message="Created", artistID=createdID)
@@ -58,15 +58,15 @@ def removeArtist(artistID):
     #全体管理者権限を要求
     if g.userPermission != 9:
         return jsonify(status=401, message="You don't have enough permissions.")
-    if not g.db.has("info_artist","artistID=?",(artistID,)):
+    if not g.db.has("info_artist","artistID=%s",(artistID,)):
         return jsonify(status=404, message="Specified artist was not found")
     illustCount = g.db.get(
-        "SELECT COUNT(artistID) FROM data_illust WHERE artistID = ?", (artistID,)
+        "SELECT COUNT(artistID) FROM data_illust WHERE artistID = %s", (artistID,)
     )[0][0]
     # 参照されていたら データロック
     if illustCount != 0:
         return jsonify(status=409, message="The artist is locked by reference.")
-    resp = g.db.edit("DELETE FROM info_artist WHERE artistID = ?", (artistID,))
+    resp = g.db.edit("DELETE FROM info_artist WHERE artistID = %s", (artistID,))
     if resp:
         recordApiRequest(g.userID, "removeArtist", param1=artistID)
         return jsonify(status=200, message="Delete succeed.")
@@ -79,7 +79,7 @@ def removeArtist(artistID):
 def getArtist(artistID):
     recordApiRequest(g.userID, "getArtist", param1=artistID)
     artistData = g.db.get(
-        "SELECT * FROM info_artist WHERE artistID = ?", (artistID,)
+        "SELECT * FROM info_artist WHERE artistID = %s", (artistID,)
     )
     if len(artistData) < 1:
         return jsonify(status=404, message="Specified artist was not found")
@@ -120,7 +120,7 @@ def editArtist(artistID):
         return jsonify(status=400, message="Request parameters are not satisfied.")
     for p in params.keys():
         resp = g.db.edit(
-            "UPDATE `info_artist` SET `%s`=? WHERE artistID=?"%(p),
+            "UPDATE `info_artist` SET `%s`=%s WHERE artistID=%s"%(p),
             (params[p],artistID,)
         )
         recordApiRequest(g.userID, "editArtist", param1=p, param2=params[p])

@@ -2,6 +2,24 @@ from flask import Blueprint, g, request, jsonify, escape
 from .authorizator import auth,token_serializer
 from .limiter import apiLimiter,handleApiPermission
 from .recorder import recordApiRequest
+from .lib.saucenao_client import SauceNaoClient, ImgurClient
+from PIL import Image
+import imagehash
+from tempfile import TemporaryDirectory
+from base64 import b64encode
+from uuid import uuid4
+import os.path
+from imghdr import what as what_img
+
+ALLOWED_EXTENSIONS = ["gif", "png", "jpg", "jpeg", "webp"]
+
+def isNotAllowedFile(filename):
+    if filename == ""\
+    or '.' not in filename\
+    or (filename.rsplit('.', 1)[1].lower()\
+    not in ALLOWED_EXTENSIONS):
+        return True
+    return False
 
 search_api = Blueprint('search_api', __name__)
 
@@ -32,14 +50,14 @@ def searchByTag():
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
-        "SELECT COUNT(illustID) FROM data_tag WHERE tagID = ?",
+        "SELECT COUNT(illustID) FROM data_tag WHERE tagID = %s",
         (tagID,)
     )
     if not len(illustCount):
         return jsonify(status=404, message="No matched illusts.")
     illustCount = illustCount[0][0]
     tagName = g.db.get(
-        "SELECT tagName FROM info_tag WHERE tagID = ?",
+        "SELECT tagName FROM info_tag WHERE tagID = %s",
         (tagID,)
     )[0][0]
     pages, extra_page = divmod(illustCount, per_page)
@@ -51,7 +69,7 @@ def searchByTag():
         + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "WHERE illustID IN "\
-        + "(SELECT illustID FROM data_tag WHERE tagID=?) "\
+        + "(SELECT illustID FROM data_tag WHERE tagID=%s) "\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
         (tagID,)
@@ -107,14 +125,14 @@ def searchByArtist():
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
-        "SELECT COUNT(illustID) FROM data_illust WHERE artistID = ?",
+        "SELECT COUNT(illustID) FROM data_illust WHERE artistID = %s",
         (artistID,)
     )
     if not len(illustCount):
         return jsonify(status=404, message="No matched illusts.")
     illustCount = illustCount[0][0]
     artistName = g.db.get(
-        "SELECT artistName FROM info_artist WHERE artistID = ?",
+        "SELECT artistName FROM info_artist WHERE artistID = %s",
         (artistID,)
     )[0][0]
     pages, extra_page = divmod(illustCount, per_page)
@@ -125,7 +143,7 @@ def searchByArtist():
         + "illustDate,illustPage,illustLike,"\
         + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
-        + "WHERE data_illust.artistID = ? "\
+        + "WHERE data_illust.artistID = %s "\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
         (artistID,)
@@ -181,14 +199,14 @@ def searchByCharacter():
     order = request.args.get('order', default = "d", type = str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
-        "SELECT COUNT(illustID) FROM data_tag WHERE tagID = ?",
+        "SELECT COUNT(illustID) FROM data_tag WHERE tagID = %s",
         (charaID,)
     )
     if not len(illustCount):
         return jsonify(status=404, message="No matched illusts.")
     illustCount = illustCount[0][0]
     charaName = g.db.get(
-        "SELECT tagName FROM info_tag WHERE tagID = ?",
+        "SELECT tagName FROM info_tag WHERE tagID = %s",
         (charaID,)
     )[0][0]
     pages, extra_page = divmod(illustCount, per_page)
@@ -200,7 +218,7 @@ def searchByCharacter():
         + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
         + "WHERE illustID IN "\
-        + "(SELECT illustID FROM data_tag WHERE tagID=?) "\
+        + "(SELECT illustID FROM data_tag WHERE tagID=%s) "\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
         (charaID,)
@@ -257,7 +275,7 @@ def searchByKeyword():
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
         "SELECT COUNT(illustID) FROM data_illust "\
-        + "WHERE illustName LIKE ?",
+        + "WHERE illustName LIKE %s",
         ("%"+keyword+"%",)
     )
     if not len(illustCount):
@@ -271,7 +289,7 @@ def searchByKeyword():
         + "illustDate,illustPage,illustLike,"\
         + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
-        + "WHERE illustName LIKE ?"\
+        + "WHERE illustName LIKE %s"\
         + "ORDER BY %s %s "%(sortMethod, order)\
         + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
         ("%"+keyword+"%",)
@@ -367,3 +385,91 @@ def searchByAll():
                     },
             } for i in illusts]
         })
+        
+@search_api.route('/image/saucenao',methods=["POST"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def searchByImageAtSauceNao():
+    if "file" not in request.files:
+        return jsonify(status=400, message="File must be included")
+    file = request.files['file']
+    # ファイル拡張子確認
+    if isNotAllowedFile(file.filename):
+        return jsonify(status=400, message="The file is not allowed")
+    with TemporaryDirectory() as temp_path:
+        # 画像を一旦保存して確認
+        uniqueID = str(uuid4()).replace("-","")
+        uniqueID = b64encode(uniqueID.encode("utf8")).decode("utf8")[:-1]
+        tempPath = os.path.join(temp_path, uniqueID)
+        file.save(tempPath)
+        fileExt = what_img(tempPath)
+        if not fileExt:
+            return jsonify(status=400, message="The file is not allowed")
+        icl = ImgurClient("2e9086b73644662")
+        cl = SauceNaoClient(
+            icl,
+            "170e7104a84bb2b2d975a2424e1ab230bc29ffa4"
+        )
+        result = cl.search(tempPath)
+        return jsonify(
+            status=200,
+            message='ok',
+            data={
+                'result': result
+            }
+        )
+
+@search_api.route('/image',methods=["POST"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def searchByImage():
+    if "file" not in request.files:
+        return jsonify(status=400, message="File must be included")
+    file = request.files['file']
+    # ファイル拡張子確認
+    if isNotAllowedFile(file.filename):
+        return jsonify(status=400, message="The file is not allowed")
+    with TemporaryDirectory() as temp_path:
+        # 画像を一旦保存して確認
+        uniqueID = str(uuid4()).replace("-","")
+        uniqueID = b64encode(uniqueID.encode("utf8")).decode("utf8")[:-1]
+        tempPath = os.path.join(temp_path, uniqueID)
+        file.save(tempPath)
+        fileExt = what_img(tempPath)
+        if not fileExt:
+            return jsonify(status=400, message="The file is not allowed")
+        # 大丈夫そうなのでハッシュ値を作成して検索
+        hash = int(str(imagehash.phash(Image.open(tempPath))), 16)
+        # 検索SQL
+        illusts = g.db.get(
+            "SELECT illustID, data_illust.artistID, BIT_COUNT(illustHash ^ %s) AS SAME, illustName, illustDescription, illustDate, illustPage, illustLike, illustOriginUrl, illustOriginSite, illustNsfw, artistName FROM `data_illust` INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID HAVING SAME < 5 ORDER BY SAME DESC LIMIT 10",
+            (hash,)
+        )
+        if len(illusts):
+            illusts = [{
+                "illustID": i[0],
+                "artistID": i[1],
+                "similarity": i[2],
+                "title": i[3],
+                "caption": i[4],
+                "date": i[5],
+                "pages": i[6],
+                "like": i[7],
+                "originUrl": i[8],
+                "originService": i[9],
+                "nsfw": i[10],
+                "artist": {
+                    "name": i[11]
+                }
+            } for i in illusts]
+        else:
+            illusts = []
+        # データベースから検索
+        return jsonify(
+            status=200,
+            message='ok',
+            data={
+                'hash':str(hash),
+                'illusts': illusts
+            }
+        )

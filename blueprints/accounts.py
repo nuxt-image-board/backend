@@ -44,7 +44,7 @@ LINE_REDIRECT_URI_CONNECT   = "http://127.0.0.1:3000/line_connect"
 
 def generateApiKey(accountID):
     apiSeq, apiPermission = g.db.get(
-        "SELECT userApiSeq,userPermission FROM data_user WHERE userID=?",
+        "SELECT userApiSeq,userPermission FROM data_user WHERE userID=%s",
         (accountID,)
     )[0]
     token = token_serializer.dumps({
@@ -53,7 +53,7 @@ def generateApiKey(accountID):
         'permission': apiPermission
     }).decode('utf-8')
     resp = g.db.edit(
-        "UPDATE data_user SET userApiSeq=userApiSeq+1, userApiKey=? WHERE userID=?",
+        "UPDATE data_user SET userApiSeq=userApiSeq+1, userApiKey=%s WHERE userID=%s",
         (token, accountID)
     )
     if not resp:
@@ -81,14 +81,14 @@ def createAccount():
     # 招待コードが合ってるか確認
     if not g.db.has(
         "data_invite",
-        "invitee IS NULL AND inviteCode=?",
+        "invitee IS NULL AND inviteCode=%s",
         (inviteCode,)
     ):
         return jsonify(status=400, message="The invite code is invalid.")
     # IDと名前の重複確認
     if g.db.has(
         "data_user",
-        "userDisplayID=? OR userName=?",
+        "userDisplayID=%s OR userName=%s",
         (displayID, username)
     ):
         return jsonify(status=409, message="userDisplayID or userName is already used.")
@@ -98,24 +98,24 @@ def createAccount():
     password = hashlib.sha256(password.encode("utf8")).hexdigest()
     # 新規アカウント作成
     resp = g.db.edit(
-        "INSERT INTO `data_user`(`userDisplayID`, `userName`,`userPassword`) VALUES (?,?,?)",
+        "INSERT INTO `data_user`(`userDisplayID`, `userName`,`userPassword`) VALUES (%s,%s,%s)",
         (displayID, username, password)
     )
     if not resp:
         return jsonify(status=500, message="Server bombed.")
     # 作成したユーザーID取得
     userID = g.db.get(
-        "SELECT userID FROM data_user WHERE userDisplayID=? AND userPassword=?",
+        "SELECT userID FROM data_user WHERE userDisplayID=%s AND userPassword=%s",
         (displayID, password)
     )[0][0]
     # 使う招待コードを1つ取る
     inviteSeq = g.db.get(
-        "SELECT inviteSeq FROM data_invite WHERE invitee IS NULL AND inviteCode=? ORDER BY inviteSeq ASC LIMIT 1",
+        "SELECT inviteSeq FROM data_invite WHERE invitee IS NULL AND inviteCode=%s ORDER BY inviteSeq ASC LIMIT 1",
         (inviteCode, )
     )[0][0]
     # 招待コードを利用済みにする
     resp = g.db.edit(
-        "UPDATE data_invite SET invitee=?, inviteUsed=? WHERE inviteSeq=?",
+        "UPDATE data_invite SET invitee=%s, inviteUsed=%s WHERE inviteSeq=%s",
         (userID, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), inviteSeq)
     )
     if not resp:
@@ -145,7 +145,7 @@ def loginAccountWithForm():
         password = "***REMOVED***"+params["password"]
         password = hashlib.sha256(password.encode("utf8")).hexdigest()
         apiKey = g.db.get(
-            "SELECT userApiKey FROM data_user WHERE userDisplayID=? AND userPassword=?",
+            "SELECT userApiKey FROM data_user WHERE userDisplayID=%s AND userPassword=%s",
             (params["id"], password)
         )
         if not apiKey:
@@ -180,9 +180,9 @@ def loginAccountWithForm():
             algorithms=['HS256']
         )
         lineUserID = lineData["sub"]
-        if not g.db.has("data_user", "userLineID=?", (lineUserID,)):
+        if not g.db.has("data_user", "userLineID=%s", (lineUserID,)):
             return jsonify(status=404, message="account not found")
-        apiKey = g.db.get("SELECT userApiKey FROM data_user WHERE userLineID=?", (lineUserID,))[0][0]
+        apiKey = g.db.get("SELECT userApiKey FROM data_user WHERE userLineID=%s", (lineUserID,))[0][0]
         return jsonify(
             status=200,
             message="welcome back",
@@ -222,9 +222,9 @@ def loginAccountWithLine():
         algorithms=['HS256']
     )
     lineUserID = lineData["sub"]
-    if not g.db.has("data_user", "userLineID=?", (lineUserID,)):
+    if not g.db.has("data_user", "userLineID=%s", (lineUserID,)):
         return jsonify(status=404, message="account not found")
-    apiKey = g.db.get("SELECT userApiKey FROM data_user WHERE userLineID=?", (lineUserID,))[0][0]
+    apiKey = g.db.get("SELECT userApiKey FROM data_user WHERE userLineID=%s", (lineUserID,))[0][0]
     return jsonify(
         status=200,
         message="welcome back",
@@ -267,7 +267,7 @@ def connectLineAccount(accountID):
     )
     lineUserID = lineData["sub"]
     resp = g.db.edit(
-        "UPDATE data_user SET userLineID=? WHERE userID=?",
+        "UPDATE data_user SET userLineID=%s WHERE userID=%s",
         (lineUserID,g.userID)
     )
     print(resp)
@@ -281,7 +281,7 @@ def connectLineAccount(accountID):
 @apiLimiter.limit(handleApiPermission)
 def getSelfAccount():
     resp = g.db.get(
-        "SELECT userID,userDisplayID,userName,userFavorite FROM data_user WHERE userApiKey=?",
+        "SELECT userID,userDisplayID,userName,userFavorite FROM data_user WHERE userApiKey=%s",
         (g.userApiKey,)
     )[0]
     recordApiRequest(g.userID, "getAccount", param1=g.userID)
@@ -302,7 +302,7 @@ def getSelfAccount():
 @apiLimiter.limit(handleApiPermission)
 def getAccount(accountID):
     resp = g.db.get(
-        "SELECT userID,userDisplayID,userName,userFavorite FROM data_user WHERE userID=?",
+        "SELECT userID,userDisplayID,userName,userFavorite FROM data_user WHERE userID=%s",
         (accountID,)
     )
     if not resp or accountID in [0,1,2]:
@@ -343,7 +343,7 @@ def destroyAccount(accountID):
     if not resp:
         return jsonify(status=500, message="Server bombed.")
     resp = g.db.edit(
-        "DELETE FROM `data_user` WHERE userID=?",
+        "DELETE FROM `data_user` WHERE userID=%s",
         (accountID,)
     )
     if not resp:
@@ -380,7 +380,7 @@ def editAccount():
             params[p] = "***REMOVED***"+password
             params[p] = hashlib.sha256(password.encode("utf8")).hexdigest()
         resp = g.db.edit(
-            "UPDATE `data_user` SET `%s`=? WHERE userID=?"%(p),
+            "UPDATE `data_user` SET `%s`=%s WHERE userID=%s"%(p),
             (params[p],userID,)
         )
         if not resp:
