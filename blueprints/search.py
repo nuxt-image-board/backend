@@ -386,6 +386,39 @@ def searchByAll():
             } for i in illusts]
         })
         
+@search_api.route('/random',methods=["GET"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def searchByRandom():
+    acceptNsfw = request.args.get('nsfw', default = 0, type = int)
+    if acceptNsfw != 0:
+        acceptNsfw = 1
+    illust = g.db.get(
+		"SELECT illustID, data_illust.artistID, illustName, illustDescription, illustDate, illustPage, illustLike, illustOriginUrl, illustOriginSite, illustNsfw, artistName FROM `data_illust` INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID WHERE illustNsfw=%s ORDER BY RAND() LIMIT 1",
+        (acceptNsfw, )
+    )[0]
+    return jsonify(
+        status=200,
+        message="found",
+        data={
+            "imgs": [{
+                "illustID": illust[0],
+                "artistID": illust[1],
+                "title": illust[2],
+                "caption": illust[3],
+                "date": illust[4],
+                "pages": illust[5],
+                "like": illust[6],
+                "originUrl": illust[7],
+                "originService": illust[8],
+                "nsfw": illust[9],
+                "artist": {
+                    "name": illust[10]
+                }
+            }]
+        }
+    )
+
 @search_api.route('/image/saucenao',methods=["POST"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)

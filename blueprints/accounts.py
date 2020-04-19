@@ -270,7 +270,6 @@ def connectLineAccount(accountID):
         "UPDATE data_user SET userLineID=%s WHERE userID=%s",
         (lineUserID,g.userID)
     )
-    print(resp)
     if not resp:
         return jsonify(status=500, message="Server bombed.")
     recordApiRequest(g.userID, "connectLineAccount", param1=accountID)
@@ -337,7 +336,7 @@ def destroyAccount(accountID):
     if g.userID != accountID and g.permission < 9:
         return jsonify(status=403, message="You don't have enough permissions.")
     resp = g.db.edit(
-        "UPDATE illust_main SET userID=0 WHERE userID",
+        "UPDATE illust_main SET userID=0 WHERE userID=?",
         (accountID,)
     )
     if not resp:

@@ -15,6 +15,7 @@ getEndpoints = [
     "/search/character",
     "/search/keyword",
     "/search/all",
+    "/search/random"
 ]
 for e in getEndpoints:
     try:
@@ -29,6 +30,8 @@ scrapeEndpoint = "/search/image"
 resp = cl.post(scrapeEndpoint, files=files).json()
 print(resp)
 
+'''
 scrapeEndpoint = "/search/image/saucenao"
 resp = cl.post(scrapeEndpoint, files=files).json()
 print(resp)
+'''
