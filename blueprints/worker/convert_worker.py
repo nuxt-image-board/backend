@@ -4,6 +4,8 @@ from tempfile import TemporaryDirectory
 from urllib.parse import parse_qs as parse_query
 from .lib.pixiv_client import IllustGetter
 from .lib.twitter_client import TweetGetter
+from imghdr import what as what_img
+from PIL import Image
 import os
 import shutil
 import imagehash
@@ -70,7 +72,7 @@ class UploadImageProcessor():
         # サムネイルを作成する
         x, y = self.orig.size
         thumbnail = Image.new(
-            "RGBA",
+            "RGB",
             (targetX, targetY),
             (255, 0, 0, 0)
         )
@@ -87,56 +89,68 @@ class UploadLogger():
         self.uploadID = self.getUploadID(userID)
 
     def getUploadID(self, userID):
-        resp = self.conn.execute(
+        resp = self.conn.edit(
             "INSERT INTO data_upload (uploadStatus,userID) VALUES (1, %s)",
             (userID,)
         )
         if not resp:
+            self.conn.rollback()
             return ValueError('DB exploded')
-        uploadID = self.conn.execute(
+        uploadID = self.conn.get(
             "SELECT MAX(uploadID) FROM data_upload WHERE userID=%s",
             (userID,)
         )
         if not uploadID:
+            self.conn.rollback()
             return ValueError('DB exploded')
         return uploadID[0][0]
 
     def logStatus(self, status):
-        resp = self.conn.execute(
+        resp = self.conn.edit(
             "UPDATE data_upload SET uploadStatus = %s WHERE uploadID = %s",
-            (status, self.uploadID)
+            (status, self.uploadID,),
+            False
         )
         if not resp:
+            self.conn.rollback()
             return ValueError('DB exploded')
         return True
 
     def logConvertedThumb(self):
         self.logStatus(2)
+        self.conn.commit()
         return True
 
     def logConvertedSmall(self):
         self.logStatus(3)
+        self.conn.commit()
         return True
 
     def logConvertedLarge(self):
         self.logStatus(4)
+        self.conn.commit()
         return True
 
     def logCompleted(self):
-        resp = self.conn.execute(
+        resp = self.conn.edit(
             "UPDATE data_upload SET uploadStatus = 5, uploadFinishedDate = NOW() WHERE uploadID = %s",
-            (self.uploadID)
+            (self.uploadID,),
+            False
         )
         if not resp:
+            self.conn.rollback()
             return ValueError('DB exploded')
+        self.conn.commit()
         return True
 
     def logDuplicatedImageError(self):
         self.logStatus(8)
+        self.conn.commit()
         return True
 
     def logServerExplodedError(self):
         self.logStatus(9)
+        self.conn.commit()
         return True
 
 def processConvertRequest(params):
@@ -162,6 +176,7 @@ def processConvertRequest(params):
         (illustOriginUrl,)
     )
     if resp:
+        conn.rollback()
         uploadLogger.logDuplicatedImageError()
         return
     #既存の作者でなければ新規作成
@@ -178,6 +193,7 @@ def processConvertRequest(params):
         if not resp:
             conn.rollback()
             uploadLogger.logServerExplodedError()
+            conn.commit()
             return
     #作者IDを取得する
     artistID = conn.get(
@@ -258,7 +274,12 @@ def processConvertRequest(params):
             # Origデータを移動
             origType = what_img(fileOrigPath)
             if origType not in ["png","jpg","gif","webp"]:
-                raise Exception('Unknown file')
+                with open(fileOrigPath,"rb") as f:
+                    file = f.read()
+                    if file[:2] != b'\xff\xd8':
+                        raise Exception('Unknown file')
+                    else:
+                        origType="jpg"
             shutil.move(fileOrigPath, fileOrigPath.replace("raw", origType))
             #画像処理時点のデータ登録
             resp = conn.edit(
@@ -279,13 +300,15 @@ def processConvertRequest(params):
             }
             for c in converts.keys():
                 dir = os.path.join(fileDir, c)
+                img = converts[c][0]()
                 for e in ["jpg","webp"]:
-                    converts[c][0].save(
+                    img.save(
                         os.path.join(dir, f"{illustID}.{e}"),
                         quality=80
                     )
                 converts[c][1]()
-    except:
+    except Exception as e:
+        print(e)
         for folder in ["orig","thumb","small","large"]:
             dir = os.path.join(fileDir, folder)
             for extension in ["png","jpg","webp","gif"]:
@@ -316,4 +339,7 @@ if __name__ == "__main__":
         "nsfw": 0
     }
     print("ok")
+    conn = SQLHandler()
+    uploadLogger = UploadLogger(conn, "3")
+    print(uploadLogger.uploadID)
     #processConvertRequest(params)
