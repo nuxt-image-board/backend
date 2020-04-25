@@ -39,8 +39,8 @@ Permission
 LINE_CHANNEL_ID     = "***REMOVED***"
 LINE_CHANNEL_SECRET = "***REMOVED***"
 LINE_ENDPOINT       = "https://api.line.me/oauth2/v2.1/token"
-LINE_REDIRECT_URI_LOGIN     = "http://***REMOVED***:3000/line_callback"
-LINE_REDIRECT_URI_CONNECT   = "http://127.0.0.1:3000/line_connect"
+LINE_REDIRECT_URI_LOGIN     = "https://***REMOVED***/line_callback"
+LINE_REDIRECT_URI_CONNECT   = "https://***REMOVED***/line_connect"
 
 def generateApiKey(accountID):
     apiSeq, apiPermission = g.db.get(
@@ -102,6 +102,7 @@ def createAccount():
         (displayID, username, password)
     )
     if not resp:
+        print("ユーザーを作成できない！")
         return jsonify(status=500, message="Server bombed.")
     # 作成したユーザーID取得
     userID = g.db.get(
@@ -119,6 +120,7 @@ def createAccount():
         (userID, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), inviteSeq)
     )
     if not resp:
+        print("招待コードを利用済みにできない！")
         return jsonify(status=500, message="Server bombed.")
     # APIキーを作る
     apiKey = generateApiKey(userID)
@@ -280,7 +282,7 @@ def connectLineAccount(accountID):
 @apiLimiter.limit(handleApiPermission)
 def getSelfAccount():
     resp = g.db.get(
-        "SELECT userID,userDisplayID,userName,userFavorite FROM data_user WHERE userApiKey=%s",
+        "SELECT userID,userDisplayID,userName,userFavorite, ( CASE WHEN userLineID IS NOT NULL THEN 1 ELSE 0 END) AS isLineConnected FROM data_user WHERE userApiKey=%s",
         (g.userApiKey,)
     )[0]
     recordApiRequest(g.userID, "getAccount", param1=g.userID)
@@ -292,6 +294,7 @@ def getSelfAccount():
             "displayID": resp[1],
             "name": resp[2],
             "favorite": resp[3],
+            "lineConnect": resp[4],
             "apiKey":g.userApiKey
         }
     )
@@ -353,7 +356,7 @@ def destroyAccount(accountID):
 @accounts_api.route('/<int:accountID>',methods=["PUT"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-def editAccount():
+def editAccount(accountID):
     #　一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.permission < 9:
         return jsonify(status=403, message="You don't have enough permissions.")
@@ -376,11 +379,11 @@ def editAccount():
             continue
         if p == "userPassword":
             params[p] = g.validate(params[p],lengthMin=5,lengthMax=50)
-            params[p] = "***REMOVED***"+password
-            params[p] = hashlib.sha256(password.encode("utf8")).hexdigest()
+            params[p] = "***REMOVED***"+params[p]
+            params[p] = hashlib.sha256(params[p].encode("utf8")).hexdigest()
         resp = g.db.edit(
             "UPDATE `data_user` SET `%s`=%s WHERE userID=%s"%(p),
-            (params[p],userID,)
+            (params[p],g.userID,)
         )
         if not resp:
             return jsonify(status=500, message="Server bombed.")

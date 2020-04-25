@@ -5,15 +5,16 @@ cl = BaseClient()
 # アカウント作成
 addEndpoint = "/accounts"
 params = {
-    "displayID":"omado",
-    "username":"お窓",
+    "displayID":"kemu",
+    "username":"けむ",
     "password":"***REMOVED***",
     "inviteCode":"PYONPYON"
 }
-#resp = cl.post(addEndpoint, json=params).json()
-#print(resp)
+resp = cl.post(addEndpoint, json=params).json()
+print(resp)
 
 # ログイン
+'''
 postEndpoint = "/accounts/login/form"
 params = {
     "id":"omado",
@@ -27,3 +28,4 @@ apiKey = resp["apiKey"]
 getEndpoint = "/accounts/me"
 resp = cl.get(getEndpoint).json()
 print(resp)
+'''

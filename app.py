@@ -24,7 +24,7 @@ DELETE /artists/<int:artistId>
 GET    /artists/<int:artistId>
 PUT    /artists/<int:artistId>
 
-<<イラスト>> 完成!
+<<イラスト>> 完成! 16:38
 POST   /arts
 DELETE /arts/<int:artId>
 GET    /arts/<int:artId>
@@ -102,6 +102,7 @@ def createApp():
     app.register_blueprint(search_api, url_prefix='/search')
     app.register_blueprint(tags_api, url_prefix='/tags')
     app.register_blueprint(scrape_api, url_prefix='/scrape')
+    app.register_blueprint(news_api, url_prefix='/news')
     # リクエスト共通処理の登録
     app.before_request(app_before_request)
     app.after_request(app_after_request)
