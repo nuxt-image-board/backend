@@ -1,0 +1,28 @@
+{
+    // IntelliSense を使用して利用可能な属性を学べます。
+    // 既存の属性の説明をホバーして表示します。
+    // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Start",
+            "type": "python",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "request": "launch",
+            "module": "flask",
+            "env": {
+              "FLASK_APP": "app.py",
+              "FLASK_ENV": "development",
+              "FLASK_DEBUG": "1"
+            },
+            "args": [
+              "run",
+              "--host=***REMOVED***",
+              "--no-debugger",
+              "--no-reload"
+            ],
+            "jinja": true
+        }
+    ]
+}
