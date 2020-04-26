@@ -103,6 +103,7 @@ def createApp():
     app.register_blueprint(tags_api, url_prefix='/tags')
     app.register_blueprint(scrape_api, url_prefix='/scrape')
     app.register_blueprint(news_api, url_prefix='/news')
+    app.register_blueprint(invites_api, url_prefix='/invites')
     # リクエスト共通処理の登録
     app.before_request(app_before_request)
     app.after_request(app_after_request)
@@ -120,4 +121,4 @@ def createApp():
 app = createApp()
 
 if __name__ == '__main__':
-    app.run(host="***REMOVED***",debug=False)
+    app.run(host="***REMOVED***",debug=True)

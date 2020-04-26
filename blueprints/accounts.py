@@ -110,14 +110,14 @@ def createAccount():
         (displayID, password)
     )[0][0]
     # 使う招待コードを1つ取る
-    inviteSeq = g.db.get(
-        "SELECT inviteSeq FROM data_invite WHERE invitee IS NULL AND inviteCode=%s ORDER BY inviteSeq ASC LIMIT 1",
+    inviteID = g.db.get(
+        "SELECT inviteID FROM data_invite WHERE invitee IS NULL AND inviteCode=%s ORDER BY inviteID ASC LIMIT 1",
         (inviteCode, )
     )[0][0]
     # 招待コードを利用済みにする
     resp = g.db.edit(
-        "UPDATE data_invite SET invitee=%s, inviteUsed=%s WHERE inviteSeq=%s",
-        (userID, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), inviteSeq)
+        "UPDATE data_invite SET invitee=%s, inviteUsed=%s WHERE inviteID=%s",
+        (userID, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), inviteID)
     )
     if not resp:
         print("招待コードを利用済みにできない！")
@@ -282,7 +282,61 @@ def connectLineAccount(accountID):
 @apiLimiter.limit(handleApiPermission)
 def getSelfAccount():
     resp = g.db.get(
-        "SELECT userID,userDisplayID,userName,userFavorite, ( CASE WHEN userLineID IS NOT NULL THEN 1 ELSE 0 END) AS isLineConnected FROM data_user WHERE userApiKey=%s",
+        """SELECT
+            data_user.userID,
+            data_user.userDisplayID,
+            data_user.userName,
+            data_user.userFavorite,
+            (
+                CASE WHEN data_user.userLineID IS NOT NULL THEN 1 ELSE 0
+                END
+            ) AS isLineConnected,
+            data_invite.inviteUsed AS registeredDate,
+            data_inviter.userID AS inviterID,
+            data_inviter.userName AS inviter,
+            (
+                SELECT
+                    inviteID
+                FROM
+                    data_invite
+                WHERE
+                    inviter = data_user.userID
+                    AND
+                    invitee IS NULL
+                ORDER BY inviteID DESC LIMIT 1
+            ) AS inviteID,
+            (
+                SELECT
+                    inviteCode
+                FROM
+                    data_invite
+                WHERE
+                    inviter = data_user.userID
+                    AND
+                    invitee IS NULL
+                ORDER BY inviteID DESC LIMIT 1
+            ) AS inviteCode,
+            (
+                SELECT
+                    COUNT(invitee)
+                FROM
+                    data_invite
+                WHERE
+                    inviter = data_user.userID
+            ) AS inviteCount,
+            data_user.userInviteEnabled
+        FROM
+            data_user
+        LEFT OUTER JOIN
+            data_invite
+        ON
+            data_invite.invitee = data_user.userID
+        INNER JOIN
+            data_user AS data_inviter
+        ON
+            data_inviter.userID = data_invite.inviter
+        WHERE
+            data_user.userApiKey = %s""",
         (g.userApiKey,)
     )[0]
     recordApiRequest(g.userID, "getAccount", param1=g.userID)
@@ -295,6 +349,17 @@ def getSelfAccount():
             "name": resp[2],
             "favorite": resp[3],
             "lineConnect": resp[4],
+            "registeredDate": resp[5].strftime('%Y-%m-%d %H:%M:%S'),
+            "inviter": {
+                "id": resp[6],
+                "name": resp[7]
+            },
+            "invite": {
+                "id": resp[8],
+                "code": resp[9] if resp[11] == 1 else "INVITE_IS_DISABLED",
+                "invited": resp[10],
+                "enabled": bool(int(resp[11]))
+            },
             "apiKey":g.userApiKey
         }
     )
@@ -320,6 +385,31 @@ def getAccount(accountID):
             "name": resp[2],
             "favorite": resp[3]
         }
+    )
+    
+@accounts_api.route('/<int:accountID>/upload_history',methods=["GET"])
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def getUploadHistory(accountID):
+    if g.userID != accountID and g.permission < 9:
+        return jsonify(status=400, message="You don't have enough permissions.")
+    resp = g.db.get(
+        "SELECT uploadID, uploadStartedDate, uploadFinishedDate, uploadStatus, illustID FROM data_upload WHERE userID=%s ORDER BY uploadID DESC LIMIT 5",
+        (accountID,)
+    )
+    if not resp or accountID in [0,1]:
+        return jsonify(status=404, message="The account data was not found.")
+    recordApiRequest(g.userID, "getUploadHistory", param1=accountID)
+    return jsonify(
+        status=200,
+        message="ok",
+        data=[{
+            "uploadID": d[0],
+            "started": d[1].strftime('%Y-%m-%d %H:%M:%S') if d[1] else None,
+            "finished": d[2].strftime('%Y-%m-%d %H:%M:%S') if d[2] else None, 
+            "status": d[3],
+            "illustID": d[4]
+        } for d in resp]
     )
 
 @accounts_api.route('/<int:accountID>/apiKey',methods=["GET"])

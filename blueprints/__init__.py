@@ -8,6 +8,7 @@ from .search import search_api
 from .tags import tags_api
 from .scrape import scrape_api
 from .news import news_api
+from .invites import invites_api
 from .authorizator import auth
 from .limiter import apiLimiter
 
@@ -22,6 +23,7 @@ __all__ = [
     "tags_api",
     "scrape_api",
     "news_api",
+    "invites_api",
     "auth",
     "apiLimiter"
 ]

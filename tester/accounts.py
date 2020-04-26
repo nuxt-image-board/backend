@@ -3,6 +3,7 @@ import json
 cl = BaseClient()
 
 # アカウント作成
+'''
 addEndpoint = "/accounts"
 params = {
     "displayID":"kemu",
@@ -12,6 +13,7 @@ params = {
 }
 resp = cl.post(addEndpoint, json=params).json()
 print(resp)
+'''
 
 # ログイン
 '''
@@ -23,9 +25,9 @@ params = {
 resp = cl.post(postEndpoint, json=params).json()
 print(resp)
 apiKey = resp["apiKey"]
+'''
 
 # 自分のアカウント情報
-getEndpoint = "/accounts/me"
+getEndpoint = "/accounts/2/upload_history"
 resp = cl.get(getEndpoint).json()
 print(resp)
-'''
