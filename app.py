@@ -4,7 +4,7 @@ from request_handler import *
 from blueprints import *
 
 '''
-ごちイラAPI α3
+ごちイラAPI α3 test
 
 <<アカウント>>
 POST   /accounts
