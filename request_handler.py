@@ -1,4 +1,4 @@
-from flask import g, jsonify
+from flask import g, jsonify, current_app
 from db import SQLHandler
 import html
 
@@ -81,3 +81,7 @@ def error_server_bombed(e):
 # デフォルト
 def app_index():
     return jsonify(status=200, message="Server is running.")
+
+# デフォルト
+def app_favicon():
+    return current_app.send_static_file('favicon.ico')

@@ -5,6 +5,7 @@ from request_handler import (
     app_after_request,
     app_teardown_appcontext,
     app_index,
+    app_favicon,
     error_unauthorized,
     error_not_found,
     error_ratelimit,
@@ -116,6 +117,7 @@ def createApp():
     app.config['TEMP_FOLDER'] = 'static/temp'
     # 各ページルールを登録
     app.add_url_rule('/', 'index', app_index, strict_slashes=False)
+    app.add_url_rule('/favicon.ico', 'favicon.ico', app_favicon)
     app.register_blueprint(accounts_api, url_prefix='/accounts')
     app.register_blueprint(artists_api, url_prefix='/artists')
     app.register_blueprint(arts_api, url_prefix='/arts')
