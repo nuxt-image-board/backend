@@ -22,11 +22,12 @@ from blueprints import (
     scrape_api,
     news_api,
     invites_api,
+    superuser_api,
     apiLimiter
 )
 
 '''
-ごちイラAPI α3 test
+ごちイラAPI α3
 
 <<アカウント>>
 POST   /accounts
@@ -126,6 +127,7 @@ def createApp():
     app.register_blueprint(scrape_api, url_prefix='/scrape')
     app.register_blueprint(news_api, url_prefix='/news')
     app.register_blueprint(invites_api, url_prefix='/invites')
+    app.register_blueprint(superuser_api, url_prefix='/superuser')
     # リクエスト共通処理の登録
     app.before_request(app_before_request)
     app.after_request(app_after_request)

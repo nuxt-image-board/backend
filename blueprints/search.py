@@ -250,7 +250,7 @@ def searchByCharacter():
                     },
             } for i in illusts]
         })
-        
+
 @search_api.route("/keyword",methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
