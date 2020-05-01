@@ -11,19 +11,19 @@ import shutil
 import imagehash
 import traceback
 
-''' 
+'''
 REQ
 {
     "title":"Test",
-    "caption":"�?ストデータ",
+    "caption":"テストデータ",
     "originUrl": "元URL",
-    "originService": "�?サービス�?",
-    "imageUrl": "画像�?�元URL",
-    //どれか1つが存在するかつあってれ�?�OK
+    "originService": "元サービス名",
+    "imageUrl": "画像の元URL",
+    //どれか1つが存在するかつあってればOK
     "artist":{
-        "twitterID":"適当で�?",
-        "pixivID":"適当で�?",
-        "name":"適当で�?"
+        "twitterID":"適当でも",
+        "pixivID":"適当でも",
+        "name":"適当でも"
     },
     "tag":["","",""],
     "chara": ["","",""],
@@ -31,12 +31,13 @@ REQ
 }
 '''
 
+
 class UploadImageProcessor():
     def __init__(self, img_src):
         self.orig = self.createOrig(img_src)
 
     def shrinkImage(self, imgObj, targetX=640, targetY=480):
-        '''�?定サイズぐら�?の画像を作る(既に�?定したサイズ以下�?�場合�?�そ�?�まま返す)'''
+        '''指定サイズぐらいの画像を作る(既に指定したサイズ以下の場合はそのまま返す)'''
         x, y = imgObj.size
         if x <= targetX and y <= targetY:
             return imgObj
@@ -44,44 +45,45 @@ class UploadImageProcessor():
             new_x = targetX
             hiritsu_x = new_x / x
             new_y = int(y * hiritsu_x)
-            resp = imgObj.resize((new_x,new_y), Image.LANCZOS)
+            resp = imgObj.resize((new_x, new_y), Image.LANCZOS)
             return resp
         else:
             new_y = targetY
             hiritsu_y = new_y / y
             new_x = int(x * hiritsu_y)
-            resp = imgObj.resize((new_x,new_y), Image.LANCZOS)
+            resp = imgObj.resize((new_x, new_y), Image.LANCZOS)
             return resp
-            
+
     def createOrig(self, img_src):
         # PNG/WEBPに変換する
         imgObj = Image.open(img_src).convert("RGB")
         return imgObj
 
     def createLarge(self):
-        # 1280x960ぐら�?に縮小す�?
-        large = self.shrinkImage(self.orig,1280,960)
+        # 1280x960ぐらいに縮小する
+        large = self.shrinkImage(self.orig, 1280, 960)
         return large
 
     def createSmall(self):
-        # 640x480ぐら�?に縮小す�?
-        small = self.shrinkImage(self.orig,640,480)
+        # 640x480ぐらいに縮小する
+        small = self.shrinkImage(self.orig, 640, 480)
         return small
-        
+
     def createThumb(self, targetX=320, targetY=240):
-        # サ�?ネイルを作�?�す�?
+        # サムネイルを作成する
         x, y = self.orig.size
         thumbnail = Image.new(
             "RGB",
             (targetX, targetY),
-            (255, 0, 0, 0)
+            (255, 255, 255)
         )
         new_y = targetY
         hiritsu_y = new_y / y
         new_x = int(x * hiritsu_y)
-        cropped = self.orig.resize((new_x,new_y), Image.LANCZOS)
-        thumbnail.paste(cropped, ((targetX-new_x)//2,0))
+        cropped = self.orig.resize((new_x, new_y), Image.LANCZOS)
+        thumbnail.paste(cropped, ((targetX-new_x)//2, 0))
         return thumbnail
+
 
 class UploadLogger():
     def __init__(self, conn, userID):
@@ -140,7 +142,8 @@ class UploadLogger():
         if not resp:
             self.conn.rollback()
             return ValueError('DB exploded')
-        self.conn.commit()
+        else:
+            self.conn.commit()
         return True
 
     def logDuplicatedImageError(self):
@@ -153,24 +156,25 @@ class UploadLogger():
         self.conn.commit()
         return True
 
+
 def processConvertRequest(params):
-    # バリ�?ーションはエンド�?�イントで�?って�?る前�?
-    # インスタンス作�??
+    # バリデーションはエンドポイントでやっている前提
+    # インスタンス作成
     conn = SQLHandler()
     userID = str(params["userID"])
     uploadLogger = UploadLogger(conn, userID)
-    # パラメータを読み出�?
+    # パラメータを読み出す
     artistName = params["artist"].get("name", None)
     pixivID = params["artist"].get("pixivID", None)
     twitterID = params["artist"].get("twitterID", None)
-    illustName = params.get("title", "無�?")
-    illustDescription = params.get("caption", "コメントな�?")
+    illustName = params.get("title", "無題")
+    illustDescription = params.get("caption", "コメントなし")
     illustPage = 1
     illustOriginUrl = params.get("originUrl", "https://gochiusa.com")
-    illustOriginSite = params.get("originService", "不�??")
+    illustOriginSite = params.get("originService", "不明")
     illustNsfw = params.get("nsfw", "0")
-    illustNsfw = "1" if illustNsfw not in [0,"0","False","false"] else "0"
-    # 出典時点の重�?確�?
+    illustNsfw = "1" if illustNsfw not in [0, "0", "False", "false"] else "0"
+    # 出典時点の重複確認
     resp = conn.get(
         "SELECT illustID FROM data_illust WHERE illustOriginUrl=%s AND illustOriginUrl <> 'https://gochiusa.com'",
         (illustOriginUrl,)
@@ -179,15 +183,15 @@ def processConvertRequest(params):
         conn.rollback()
         uploadLogger.logDuplicatedImageError()
         return
-    #既存�?�作�??でなければ新規作�??
+    # 既存の作者でなければ新規作成
     if not conn.has(
         "info_artist",
         "artistName=%s OR pixivID=%s OR twitterID=%s",
-        (artistName,pixivID,twitterID)
+        (artistName, pixivID, twitterID)
     ):
         resp = conn.edit(
             "INSERT INTO info_artist (artistName,twitterID,pixivID) VALUES (%s,%s,%s)",
-            (artistName,pixivID,twitterID),
+            (artistName, pixivID, twitterID),
             False
         )
         if not resp:
@@ -195,12 +199,12 @@ def processConvertRequest(params):
             uploadLogger.logServerExplodedError()
             conn.commit()
             return
-    #作�??IDを取得す�?
+    # 作者IDを取得する
     artistID = conn.get(
         "SELECT artistID FROM info_artist WHERE artistName=%s OR pixivID=%s or twitterID=%s",
-        (artistName,pixivID,twitterID)
+        (artistName, pixivID, twitterID)
     )[0][0]
-    #パラメータ時点の�?ータ登録
+    # パラメータ時点のデータ登録
     resp = conn.edit(
         "INSERT INTO data_illust (artistID,illustName,illustDescription,illustPage,illustOriginUrl,illustOriginSite,userID,illustNsfw) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
         (
@@ -219,22 +223,26 @@ def processConvertRequest(params):
         conn.rollback()
         uploadLogger.logServerExplodedError()
         return
-    # 登録した画像�?�IDを取�?
-    illustID = conn.get("SELECT illustID FROM data_illust WHERE illustName=%s ORDER BY illustID DESC", (illustName,) )[0][0]
-    #タグ�?報取�?/作�??
-    #キャラ�?報取�?/作�??
-    for i,k in enumerate(["tag", "chara"]):
+    # 登録した画像のIDを取得
+    illustID = conn.get(
+        "SELECT illustID FROM data_illust WHERE illustName=%s ORDER BY illustID DESC", (illustName,))[0][0]
+    # タグ情報取得/作成
+    # キャラ情報取得/作成
+    for i, k in enumerate(["tag", "chara"]):
         if k in params.keys():
             for t in params[k]:
-                if not conn.has("info_tag","tagName=%s", (t,)):
-                    conn.edit("INSERT INTO info_tag (userID,tagName,tagType,tagNsfw) VALUES (%s,%s,%s,0)", (userID,t,i), False)
-                tagID = conn.get("SELECT tagID FROM info_tag WHERE tagName=%s",(t,))[0][0]
-                resp = conn.edit("INSERT INTO data_tag (illustID,tagID) VALUES (%s,%s)",(str(illustID),str(tagID)), False)
+                if not conn.has("info_tag", "tagName=%s", (t,)):
+                    conn.edit(
+                        "INSERT INTO info_tag (userID,tagName,tagType,tagNsfw) VALUES (%s,%s,%s,0)", (userID, t, i), False)
+                tagID = conn.get(
+                    "SELECT tagID FROM info_tag WHERE tagName=%s", (t,))[0][0]
+                resp = conn.edit("INSERT INTO data_tag (illustID,tagID) VALUES (%s,%s)", (str(
+                    illustID), str(tagID)), False)
                 if not resp:
                     conn.rollback()
                     uploadLogger.logServerExplodedError()
                     return
-    # 画像保存�?��?
+    # 画像保存処理
     isConflict = False
     fileDir = "static/illusts/"
     try:
@@ -243,26 +251,28 @@ def processConvertRequest(params):
             # 何枚目の画像を保存するかはURLパラメータで見る
             page = 0
             if "?" in params["imageUrl"]\
-            and "***REMOVED***" not in params["imageUrl"]\
-            and "***REMOVED***" not in params["imageUrl"]:
-                query = parse_query(params["imageUrl"][params["imageUrl"].find("?")+1:])
+                    and "***REMOVED***" not in params["imageUrl"]\
+                    and "***REMOVED***" not in params["imageUrl"]:
+                query = parse_query(
+                    params["imageUrl"][params["imageUrl"].find("?")+1:])
                 page = int(query["page"][0]) - 1
-            # �?イ�?ターから取る場�?
+            # ツイッターから取る場合
             if params["imageUrl"].startswith("https://twitter.com/"):
                 tg = TweetGetter()
                 imgs = tg.getTweet(params["imageUrl"])['illust']['imgs']
                 img_addr = imgs[page]["large_src"]
                 tg.downloadIllust(img_addr, fileOrigPath)
-            # Pixivから取る場�?
+            # Pixivから取る場合
             elif params["imageUrl"].startswith("https://www.pixiv.net/"):
                 ig = IllustGetter()
                 imgs = ig.getIllust(params["imageUrl"])['illust']['imgs']
                 img_addr = imgs[page]["large_src"]
                 ig.downloadIllust(img_addr, fileOrigPath)
-            # ローカルから取る場�?
+            # ローカルから取る場合
             else:
-                shutil.move(params["imageUrl"][params["imageUrl"].find("/static/temp/")+1:] ,fileOrigPath)
-            # 画像時点の重�?確�?
+                shutil.move(params["imageUrl"][params["imageUrl"].find(
+                    "/static/temp/")+1:], fileOrigPath)
+            # 画像時点の重複確認
             hash = int(str(imagehash.phash(Image.open(fileOrigPath))), 16)
             is_match = conn.get(
                 "SELECT illustID, illustName, data_illust.artistID, artistName, BIT_COUNT(illustHash ^ %s) AS SAME FROM `data_illust` INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID HAVING SAME = 0",
@@ -271,17 +281,19 @@ def processConvertRequest(params):
             if is_match:
                 isConflict = True
                 raise Exception('Conflict')
-            # Orig�?ータを移�?
+            # Origデータを移動
             origType = what_img(fileOrigPath)
-            if origType not in ["png","jpg","gif","webp"]:
-                with open(fileOrigPath,"rb") as f:
+            if origType not in ["png", "jpg", "gif", "webp"]:
+                with open(fileOrigPath, "rb") as f:
                     file = f.read()
                     if file[:2] != b'\xff\xd8':
                         raise Exception('Unknown file')
                     else:
-                        origType="jpg"
+                        origType = "jpg"
+            # 正しい拡張子に変更
             shutil.move(fileOrigPath, fileOrigPath.replace("raw", origType))
-            #画像�?��?時点の�?ータ登録
+            fileOrigPath = fileOrigPath.replace("raw", origType)
+            # 画像処理時点のデータ登録
             resp = conn.edit(
                 "UPDATE data_illust SET illustExtension = %s, illustHash = %s WHERE illustID = %s",
                 (origType, hash, illustID),
@@ -291,17 +303,19 @@ def processConvertRequest(params):
                 conn.rollback()
                 uploadLogger.logServerExplodedError()
                 return
-            #画像�?�変換/保存�?��?
-            uploadConverter = UploadImageProcessor(fileOrigPath.replace("raw", origType))
+            # 画像の変換/保存処理
+            uploadConverter = UploadImageProcessor(fileOrigPath)
+            shutil.move(fileOrigPath, os.path.join(
+                fileDir, "orig", f"{illustID}.{origType}"))
             converts = {
-                "thumb": [ uploadConverter.createThumb, uploadLogger.logConvertedThumb ],
-                "small": [ uploadConverter.createSmall, uploadLogger.logConvertedSmall ],
-                "large": [ uploadConverter.createLarge, uploadLogger.logConvertedLarge ]
+                "thumb": [uploadConverter.createThumb, uploadLogger.logConvertedThumb],
+                "small": [uploadConverter.createSmall, uploadLogger.logConvertedSmall],
+                "large": [uploadConverter.createLarge, uploadLogger.logConvertedLarge]
             }
             for c in converts.keys():
                 dir = os.path.join(fileDir, c)
                 img = converts[c][0]()
-                for e in ["jpg","webp"]:
+                for e in ["jpg", "webp"]:
                     img.save(
                         os.path.join(dir, f"{illustID}.{e}"),
                         quality=80
@@ -309,9 +323,9 @@ def processConvertRequest(params):
                 converts[c][1]()
     except Exception as e:
         print(e)
-        for folder in ["orig","thumb","small","large"]:
+        for folder in ["orig", "thumb", "small", "large"]:
             dir = os.path.join(fileDir, folder)
-            for extension in ["png","jpg","webp","gif"]:
+            for extension in ["png", "jpg", "webp", "gif"]:
                 filePath = os.path.join(dir, f"{illustID}.{extension}")
                 if os.path.exists(filePath):
                     os.remove(filePath)
@@ -321,25 +335,25 @@ def processConvertRequest(params):
         else:
             uploadLogger.logServerExplodedError()
         return
-    conn.commit()
     uploadLogger.logCompleted(illustID)
     return
 
+
 if __name__ == "__main__":
     params = {
-        "title":"Test",
-        "caption":"�?ストデータ",
+        "title": "Test",
+        "caption": "テストデータ",
         "originUrl": "元URL",
-        "originService": "�?サービス�?",
-        "imageUrl": "画像�?�元URL",
-        "artist":{
-            "name":"適当で�?"
+        "originService": "元サービス名",
+        "imageUrl": "画像の元URL",
+        "artist": {
+            "name": "適当でも"
         },
-        "tag":["�?ス�?"],
+        "tag": ["テスト"],
         "nsfw": 0
     }
     print("ok")
     conn = SQLHandler()
     uploadLogger = UploadLogger(conn, "3")
     print(uploadLogger.uploadID)
-    #processConvertRequest(params)
+    # processConvertRequest(params)

@@ -1,6 +1,6 @@
 from flask import Blueprint, g, request, jsonify, escape
-from .authorizator import auth,token_serializer
-from .limiter import apiLimiter,handleApiPermission
+from .authorizator import auth, token_serializer
+from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
 
 tags_api = Blueprint('tags_api', __name__)
@@ -9,7 +9,8 @@ tags_api = Blueprint('tags_api', __name__)
 # タグ関連
 #
 
-@tags_api.route('/',methods=["POST"], strict_slashes=False)
+
+@tags_api.route('/', methods=["POST"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def addTag():
@@ -23,11 +24,11 @@ def addTag():
     except:
         return jsonify(status=400, message="Request parameter is invalid.")
     tagName = params.get('tagName')
-    if g.db.has("info_tag","tagName=%s",(tagName,)):
+    if g.db.has("info_tag", "tagName=%s", (tagName,)):
         return jsonify(status=409, message="The tag is already exist.")
     tagDescription = params.get('tagDescription', None)
     nsfw = params.get('nsfw', 0)
-    if nsfw in ["1",1,"True","true"]:
+    if nsfw in ["1", 1, "True", "true"]:
         nsfw = "1"
     else:
         nsfw = "0"
@@ -37,17 +38,18 @@ def addTag():
     )
     if resp:
         createdID = g.db.get(
-            "SELECT tagID FROM info_tag WHERE tagName = %s",(tagName,)
+            "SELECT tagID FROM info_tag WHERE tagName = %s", (tagName,)
         )[0][0]
         return jsonify(status=200, message="Created", tagID=createdID)
     else:
         return jsonify(status=500, message="Server bombed.")
 
-@tags_api.route('/<int:tagID>/',methods=["DELETE"], strict_slashes=False)
+
+@tags_api.route('/<int:tagID>/', methods=["DELETE"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def removeTag(tagID):
-    if not g.db.has("info_tag","tagID=%s",(tagID,)):
+    if not g.db.has("info_tag", "tagID=%s", (tagID,)):
         return jsonify(status=404, message="Specified tag was not found")
     illustCount = g.db.get(
         "SELECT COUNT(tagID) FROM data_tag WHERE tagID = %s", (tagID,)
@@ -59,8 +61,9 @@ def removeTag(tagID):
         return jsonify(status=200, message="Delete succeed.")
     else:
         return jsonify(status=500, message="Server bombed.")
-    
-@tags_api.route('/<int:tagID>/',methods=["GET"], strict_slashes=False)
+
+
+@tags_api.route('/<int:tagID>/', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def getTag(tagID):
@@ -76,8 +79,9 @@ def getTag(tagID):
         "description": tagData[4],
         "nsfw": tagData[5]
     })
-    
-@tags_api.route('/<int:tagID>/',methods=["PUT"], strict_slashes=False)
+
+
+@tags_api.route('/<int:tagID>/', methods=["PUT"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def editTag(tagID):
@@ -89,13 +93,13 @@ def editTag(tagID):
         "tagDescription",
         "tagNsfw"
     ]
-    params = {p:params[p] for p in params.keys() if p in validParams}
+    params = {p: params[p] for p in params.keys() if p in validParams}
     if not params:
         return jsonify(status=400, message="Request parameters are invalid.")
-    for p in params.keys(): 
+    for p in params.keys():
         resp = g.db.edit(
-            "UPDATE `info_tag` SET `%s`=%s WHERE tagID=%s"%(p),
-            (params[p],tagID,)
+            "UPDATE `info_tag` SET `%s`=%s WHERE tagID=%s" % (p),
+            (params[p], tagID,)
         )
         if not resp:
             return jsonify(status=400, message="The tagName is already exists.")

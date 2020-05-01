@@ -1,6 +1,6 @@
 from flask import Blueprint, request, g, jsonify
-from .authorizator import auth,token_serializer
-from .limiter import apiLimiter,handleApiPermission
+from .authorizator import auth, token_serializer
+from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
 
 characters_api = Blueprint('characters_api', __name__)
@@ -9,7 +9,8 @@ characters_api = Blueprint('characters_api', __name__)
 # 画像グループ(主に漫画向け)関連
 #
 
-@characters_api.route('/',methods=["POST"], strict_slashes=False)
+
+@characters_api.route('/', methods=["POST"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def addCharacter():
@@ -20,7 +21,7 @@ def addCharacter():
         return jsonify(status=400, message="Request parameters are not satisfied.")
     params = {p: g.validate(params[p]) for p in params.keys()}
     charaName = params.get('charaName')
-    if g.db.has("info_tag","tagName=%s",(charaName,)):
+    if g.db.has("info_tag", "tagName=%s", (charaName,)):
         return jsonify(status=409, message="The character is already exist.")
     charaDescription = params.get('charaDescription', None)
     resp = g.db.edit(
@@ -29,17 +30,18 @@ def addCharacter():
     )
     if resp:
         createdID = g.db.get(
-            "SELECT tagID FROM info_tag WHERE tagName=%s",(charaName,)
+            "SELECT tagID FROM info_tag WHERE tagName=%s", (charaName,)
         )[0][0]
         return jsonify(status=200, message="Created", charaID=createdID)
     else:
         return jsonify(status=500, message="Server bombed.")
 
-@characters_api.route('/<int:charaID>',methods=["DELETE"], strict_slashes=False)
+
+@characters_api.route('/<int:charaID>', methods=["DELETE"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def removeCharacter(charaID):
-    if not g.db.has("info_tag","tagID=%s",(charaID,)):
+    if not g.db.has("info_tag", "tagID=%s", (charaID,)):
         return jsonify(status=404, message="Specified character was not found")
     illustCount = g.db.get(
         "SELECT COUNT(tagID) FROM data_tag WHERE tagID =%s", (charaID,)
@@ -51,8 +53,9 @@ def removeCharacter(charaID):
         return jsonify(status=200, message="Delete succeed.")
     else:
         return jsonify(status=500, message="Server bombed.")
-    
-@characters_api.route('/<int:charaID>',methods=["GET"], strict_slashes=False)
+
+
+@characters_api.route('/<int:charaID>', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def getCharacter(charaID):
@@ -69,8 +72,9 @@ def getCharacter(charaID):
         "description": charaData[4],
         "nsfw": charaData[5]
     })
-    
-@characters_api.route('/<int:charaID>',methods=["PUT"], strict_slashes=False)
+
+
+@characters_api.route('/<int:charaID>', methods=["PUT"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def editCharacter(charaID):
@@ -78,14 +82,15 @@ def editCharacter(charaID):
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")
     validParams = {
-        "charaName":"tagName",
-        "charaDescription":"tagDescription"
+        "charaName": "tagName",
+        "charaDescription": "tagDescription"
     }
-    params = {validParams[p]:params[p] for p in params.keys() if p in validParams.keys()}
+    params = {validParams[p]: params[p]
+              for p in params.keys() if p in validParams.keys()}
     for p in params.keys():
         resp = g.db.edit(
-            "UPDATE `info_tag` SET `%s`=%s WHERE tagID=%s"%(p),
-            (params[p],charaID,)
+            "UPDATE `info_tag` SET `%s`=%s WHERE tagID=%s" % (p),
+            (params[p], charaID,)
         )
         if not resp:
             return jsonify(status=500, message="Server bombed.")

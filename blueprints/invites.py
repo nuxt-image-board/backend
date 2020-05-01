@@ -1,13 +1,14 @@
 from flask import Blueprint, g, request, jsonify, escape
-from .authorizator import auth,token_serializer
-from .limiter import apiLimiter,handleApiPermission
+from .authorizator import auth, token_serializer
+from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
 from hashids import Hashids
 from time import time
 
 invites_api = Blueprint('invites_api', __name__)
 
-@invites_api.route('/',methods=["GET"], strict_slashes=False)
+
+@invites_api.route('/', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def createInvite():
@@ -15,7 +16,7 @@ def createInvite():
         "data_invite",
         f"inviter = {g.userID} AND invitee IS NULL"
     ):
-        return jsonify(status=400,message="Multiple invitation is not allowed for now.",data={})
+        return jsonify(status=400, message="Multiple invitation is not allowed for now.", data={})
     hash_gen = Hashids(salt="gochiusa_random", min_length=8)
     inviteCode = hash_gen.encode(int(time())+g.userID)
     resp = g.db.edit(
@@ -24,15 +25,16 @@ def createInvite():
         False
     )
     if not resp:
-        return jsonify(status=409,message="Sorry, your request conflicted. Try again later.",data={})
+        return jsonify(status=409, message="Sorry, your request conflicted. Try again later.", data={})
     inviteID = g.db.get(
         "SELECT inviteID FROM data_invite WHERE inviter=%s AND inviteCode=%s",
         (g.userID, inviteCode)
     )[0][0]
     g.db.commit()
-    return jsonify(status=200,message="ok",data={'code':inviteCode, 'id':inviteID})
-    
-@invites_api.route('/<int:inviteID>',methods=["DELETE"], strict_slashes=False)
+    return jsonify(status=200, message="ok", data={'code': inviteCode, 'id': inviteID})
+
+
+@invites_api.route('/<int:inviteID>', methods=["DELETE"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def deleteInvite(inviteID):
@@ -47,10 +49,11 @@ def deleteInvite(inviteID):
             (inviteID)
         )
     if not resp:
-        return jsonify(status=500,message="server bombed")
-    return jsonify(status=200,message="ok")
+        return jsonify(status=500, message="server bombed")
+    return jsonify(status=200, message="ok")
 
-@invites_api.route('/<int:invitesID>',methods=["GET"], strict_slashes=False)
+
+@invites_api.route('/<int:invitesID>', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def getInvite(invitesID):
@@ -58,7 +61,8 @@ def getInvite(invitesID):
         return jsonify(status=401, message="not allowed")
     return "Not implemeted"
 
-@invites_api.route('/list',methods=["GET"], strict_slashes=False)
+
+@invites_api.route('/list', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def listInvite(invitesID):
