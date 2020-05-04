@@ -256,6 +256,7 @@ def processConvertRequest(params):
                 query = parse_query(
                     params["imageUrl"][params["imageUrl"].find("?")+1:])
                 page = int(query["page"][0]) - 1
+                params["imageUrl"] = params["imageUrl"][:params["imageUrl"].find("?")]
             # ツイッターから取る場合
             if params["imageUrl"].startswith("https://twitter.com/"):
                 tg = TweetGetter()
