@@ -134,16 +134,12 @@ class UploadLogger():
         return True
 
     def logCompleted(self, illustID):
-        resp = self.conn.edit(
+        self.conn.edit(
             "UPDATE data_upload SET uploadStatus = 5, uploadFinishedDate = NOW(), illustID=%s WHERE uploadID = %s",
             (self.uploadID, illustID),
             False
         )
-        if not resp:
-            self.conn.rollback()
-            return ValueError('DB exploded')
-        else:
-            self.conn.commit()
+        self.conn.commit()
         return True
 
     def logDuplicatedImageError(self):
@@ -322,6 +318,7 @@ def processConvertRequest(params):
                         quality=80
                     )
                 converts[c][1]()
+            uploadLogger.logCompleted(illustID)
     except Exception as e:
         print(e)
         for folder in ["orig", "thumb", "small", "large"]:
@@ -336,7 +333,6 @@ def processConvertRequest(params):
         else:
             uploadLogger.logServerExplodedError()
         return
-    uploadLogger.logCompleted(illustID)
     return
 
 
