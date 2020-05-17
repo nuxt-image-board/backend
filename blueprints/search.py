@@ -1,6 +1,6 @@
 from flask import Blueprint, g, request, jsonify, escape
-from .authorizator import auth,token_serializer
-from .limiter import apiLimiter,handleApiPermission
+from .authorizator import auth, token_serializer
+from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
 from .lib.saucenao_client import SauceNaoClient, ImgurClient
 from PIL import Image
@@ -13,13 +13,15 @@ from imghdr import what as what_img
 
 ALLOWED_EXTENSIONS = ["gif", "png", "jpg", "jpeg", "webp"]
 
+
 def isNotAllowedFile(filename):
     if filename == ""\
-    or '.' not in filename\
-    or (filename.rsplit('.', 1)[1].lower()\
-    not in ALLOWED_EXTENSIONS):
+        or '.' not in filename\
+        or (filename.rsplit('.', 1)[1].lower()
+            not in ALLOWED_EXTENSIONS):
         return True
     return False
+
 
 search_api = Blueprint('search_api', __name__)
 
@@ -27,7 +29,8 @@ search_api = Blueprint('search_api', __name__)
 # 検索結果画面 関連 (キーワード/タグ/作者/キャラ/画像 とかは全部パラメータで取る)
 #
 
-@search_api.route("/tag",methods=["GET"])
+
+@search_api.route("/tag", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByTag():
@@ -39,15 +42,15 @@ def searchByTag():
      page=1
     '''
     per_page = 20
-    pageID = request.args.get('page', default = 1, type = int)
+    pageID = request.args.get('page', default=1, type=int)
     if pageID < 1:
         pageID = 1
-    tagID = request.args.get('id', default = None, type = int)
+    tagID = request.args.get('id', default=None, type=int)
     if not tagID:
         return jsonify(status=400, message="tagID is required.")
-    sortMethod = request.args.get('sort', default = "d", type = str)
+    sortMethod = request.args.get('sort', default="d", type=str)
     sortMethod = "illustDate" if sortMethod == "d" else "illustLike"
-    order = request.args.get('order', default = "d", type = str)
+    order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
         "SELECT COUNT(illustID) FROM data_tag WHERE tagID = %s",
@@ -64,14 +67,14 @@ def searchByTag():
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
-        + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
-        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
-        + "WHERE illustID IN "\
-        + "(SELECT illustID FROM data_tag WHERE tagID=%s) "\
-        + "ORDER BY %s %s "%(sortMethod, order)\
-        + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
+        + "illustDate,illustPage,illustLike,"
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
+        + "WHERE illustID IN "
+        + "(SELECT illustID FROM data_tag WHERE tagID=%s) "
+        + "ORDER BY %s %s " % (sortMethod, order)
+        + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1)),
         (tagID,)
     )
     # ないとページ番号が不正なときに爆発する
@@ -85,24 +88,25 @@ def searchByTag():
             "count": illustCount,
             "current": pageID,
             "pages": pages,
-            "imgs":[{
-                    "illustID": i[0],
-                    "artistID": i[1],
-                    "title": i[2],
-                    "caption": i[3],
-                    "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
-                    "pages": i[5],
-                    "like": i[6],
-                    "originUrl": i[7],
-                    "originService": i[8],
-                    "nsfw": i[9],
-                    "artist": {
-                        "name": i[10]
-                    },
+            "imgs": [{
+                "illustID": i[0],
+                "artistID": i[1],
+                "title": i[2],
+                "caption": i[3],
+                "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
+                "pages": i[5],
+                "like": i[6],
+                "originUrl": i[7],
+                "originService": i[8],
+                "nsfw": i[9],
+                "artist": {
+                    "name": i[10]
+                },
             } for i in illusts]
         })
-    
-@search_api.route("/artist",methods=["GET"])
+
+
+@search_api.route("/artist", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByArtist():
@@ -114,15 +118,15 @@ def searchByArtist():
      page=1
     '''
     per_page = 20
-    pageID = request.args.get('page', default = 1, type = int)
+    pageID = request.args.get('page', default=1, type=int)
     if pageID < 1:
         pageID = 1
-    artistID = request.args.get('id', default = None, type = int)
+    artistID = request.args.get('id', default=None, type=int)
     if not artistID:
         return jsonify(status=400, message="artistID is required.")
-    sortMethod = request.args.get('sort', default = "d", type = str)
+    sortMethod = request.args.get('sort', default="d", type=str)
     sortMethod = "illustDate" if sortMethod == "d" else "illustLike"
-    order = request.args.get('order', default = "d", type = str)
+    order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
         "SELECT COUNT(illustID) FROM data_illust WHERE artistID = %s",
@@ -139,13 +143,13 @@ def searchByArtist():
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
-        + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
-        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
-        + "WHERE data_illust.artistID = %s "\
-        + "ORDER BY %s %s "%(sortMethod, order)\
-        + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
+        + "illustDate,illustPage,illustLike,"
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
+        + "WHERE data_illust.artistID = %s "
+        + "ORDER BY %s %s " % (sortMethod, order)
+        + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1)),
         (artistID,)
     )
     # ないとページ番号が不正なときに爆発する
@@ -159,24 +163,25 @@ def searchByArtist():
             "count": illustCount,
             "current": pageID,
             "pages": pages,
-            "imgs":[{
-                    "illustID": i[0],
-                    "artistID": i[1],
-                    "title": i[2],
-                    "caption": i[3],
-                    "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
-                    "pages": i[5],
-                    "like": i[6],
-                    "originUrl": i[7],
-                    "originService": i[8],
-                    "nsfw": i[9],
-                    "artist": {
-                        "name": i[10]
-                    },
+            "imgs": [{
+                "illustID": i[0],
+                "artistID": i[1],
+                "title": i[2],
+                "caption": i[3],
+                "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
+                "pages": i[5],
+                "like": i[6],
+                "originUrl": i[7],
+                "originService": i[8],
+                "nsfw": i[9],
+                "artist": {
+                    "name": i[10]
+                },
             } for i in illusts]
         })
-    
-@search_api.route("/character",methods=["GET"])
+
+
+@search_api.route("/character", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByCharacter():
@@ -188,15 +193,15 @@ def searchByCharacter():
      page=1
     '''
     per_page = 20
-    pageID = request.args.get('page', default = 1, type = int)
+    pageID = request.args.get('page', default=1, type=int)
     if pageID < 1:
         pageID = 1
-    charaID = request.args.get('id', default = None, type = int)
+    charaID = request.args.get('id', default=None, type=int)
     if not charaID:
         return jsonify(status=400, message="charaID is required.")
-    sortMethod = request.args.get('sort', default = "d", type = str)
+    sortMethod = request.args.get('sort', default="d", type=str)
     sortMethod = "illustDate" if sortMethod == "d" else "illustLike"
-    order = request.args.get('order', default = "d", type = str)
+    order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
         "SELECT COUNT(illustID) FROM data_tag WHERE tagID = %s",
@@ -213,14 +218,14 @@ def searchByCharacter():
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
-        + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
-        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
-        + "WHERE illustID IN "\
-        + "(SELECT illustID FROM data_tag WHERE tagID=%s) "\
-        + "ORDER BY %s %s "%(sortMethod, order)\
-        + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
+        + "illustDate,illustPage,illustLike,"
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
+        + "WHERE illustID IN "
+        + "(SELECT illustID FROM data_tag WHERE tagID=%s) "
+        + "ORDER BY %s %s " % (sortMethod, order)
+        + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1)),
         (charaID,)
     )
     # ないとページ番号が不正なときに爆発する
@@ -234,24 +239,25 @@ def searchByCharacter():
             "count": illustCount,
             "current": pageID,
             "pages": pages,
-            "imgs":[{
-                    "illustID": i[0],
-                    "artistID": i[1],
-                    "title": i[2],
-                    "caption": i[3],
-                    "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
-                    "pages": i[5],
-                    "like": i[6],
-                    "originUrl": i[7],
-                    "originService": i[8],
-                    "nsfw": i[9],
-                    "artist": {
-                        "name": i[10]
-                    },
+            "imgs": [{
+                "illustID": i[0],
+                "artistID": i[1],
+                "title": i[2],
+                "caption": i[3],
+                "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
+                "pages": i[5],
+                "like": i[6],
+                "originUrl": i[7],
+                "originService": i[8],
+                "nsfw": i[9],
+                "artist": {
+                    "name": i[10]
+                },
             } for i in illusts]
         })
 
-@search_api.route("/keyword",methods=["GET"])
+
+@search_api.route("/keyword", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByKeyword():
@@ -263,18 +269,18 @@ def searchByKeyword():
      page=1
     '''
     per_page = 20
-    pageID = request.args.get('page', default = 1, type = int)
+    pageID = request.args.get('page', default=1, type=int)
     if pageID < 1:
         pageID = 1
-    keyword = request.args.get('keyword', default = None, type = str)
+    keyword = request.args.get('keyword', default=None, type=str)
     if not keyword:
         return jsonify(status=400, message="keyword is required.")
-    sortMethod = request.args.get('sort', default = "d", type = str)
+    sortMethod = request.args.get('sort', default="d", type=str)
     sortMethod = "illustDate" if sortMethod == "d" else "illustLike"
-    order = request.args.get('order', default = "d", type = str)
+    order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
-        "SELECT COUNT(illustID) FROM data_illust "\
+        "SELECT COUNT(illustID) FROM data_illust "
         + "WHERE illustName LIKE %s",
         ("%"+keyword+"%",)
     )
@@ -285,13 +291,13 @@ def searchByKeyword():
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-		"SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
-        + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
-        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
-        + "WHERE illustName LIKE %s"\
-        + "ORDER BY %s %s "%(sortMethod, order)\
-        + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1)),
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
+        + "illustDate,illustPage,illustLike,"
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
+        + "WHERE illustName LIKE %s"
+        + "ORDER BY %s %s " % (sortMethod, order)
+        + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1)),
         ("%"+keyword+"%",)
     )
     # ないとページ番号が不正なときに爆発する
@@ -305,24 +311,25 @@ def searchByKeyword():
             "count": illustCount,
             "current": pageID,
             "pages": pages,
-            "imgs":[{
-                    "illustID": i[0],
-                    "artistID": i[1],
-                    "title": i[2],
-                    "caption": i[3],
-                    "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
-                    "pages": i[5],
-                    "like": i[6],
-                    "originUrl": i[7],
-                    "originService": i[8],
-                    "nsfw":i[9],
-                    "artist": {
-                        "name": i[10]
-                    },
+            "imgs": [{
+                "illustID": i[0],
+                "artistID": i[1],
+                "title": i[2],
+                "caption": i[3],
+                "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
+                "pages": i[5],
+                "like": i[6],
+                "originUrl": i[7],
+                "originService": i[8],
+                "nsfw":i[9],
+                "artist": {
+                    "name": i[10]
+                },
             } for i in illusts]
         })
 
-@search_api.route('/all',methods=["GET"], strict_slashes=False)
+
+@search_api.route('/all', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByAll():
@@ -334,12 +341,12 @@ def searchByAll():
      page=1
     '''
     per_page = 20
-    pageID = request.args.get('page', default = 1, type = int)
+    pageID = request.args.get('page', default=1, type=int)
     if pageID < 1:
         pageID = 1
-    sortMethod = request.args.get('sort', default = "d", type = str)
+    sortMethod = request.args.get('sort', default="d", type=str)
     sortMethod = "illustDate" if sortMethod == "d" else "illustLike"
-    order = request.args.get('order', default = "d", type = str)
+    order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     illustCount = g.db.get(
         "SELECT COUNT(illustID) FROM data_illust"
@@ -351,12 +358,12 @@ def searchByAll():
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-		"SELECT illustID,data_illust.artistID,illustName,illustDescription,"\
-        + "illustDate,illustPage,illustLike,"\
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "\
-        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "\
-        + "ORDER BY %s %s "%(sortMethod, order)\
-        + "LIMIT %s OFFSET %s"%(per_page, per_page*(pageID-1))
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
+        + "illustDate,illustPage,illustLike,"
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
+        + "ORDER BY %s %s " % (sortMethod, order)
+        + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1))
     )
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
@@ -369,32 +376,33 @@ def searchByAll():
             "count": illustCount,
             "current": pageID,
             "pages": pages,
-            "imgs":[{
-                    "illustID": i[0],
-                    "artistID": i[1],
-                    "title": i[2],
-                    "caption": i[3],
-                    "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
-                    "pages": i[5],
-                    "like": i[6],
-                    "originUrl": i[7],
-                    "originService": i[8],
-                    "nsfw": i[9],
-                    "artist": {
-                        "name": i[10]
-                    },
+            "imgs": [{
+                "illustID": i[0],
+                "artistID": i[1],
+                "title": i[2],
+                "caption": i[3],
+                "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
+                "pages": i[5],
+                "like": i[6],
+                "originUrl": i[7],
+                "originService": i[8],
+                "nsfw": i[9],
+                "artist": {
+                    "name": i[10]
+                },
             } for i in illusts]
         })
-        
-@search_api.route('/random',methods=["GET"], strict_slashes=False)
+
+
+@search_api.route('/random', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByRandom():
-    acceptNsfw = request.args.get('nsfw', default = 0, type = int)
+    acceptNsfw = request.args.get('nsfw', default=0, type=int)
     if acceptNsfw != 0:
         acceptNsfw = 1
     illust = g.db.get(
-		"SELECT illustID, data_illust.artistID, illustName, illustDescription, illustDate, illustPage, illustLike, illustOriginUrl, illustOriginSite, illustNsfw, artistName FROM `data_illust` INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID WHERE illustNsfw=%s ORDER BY RAND() LIMIT 1",
+        "SELECT illustID, data_illust.artistID, illustName, illustDescription, illustDate, illustPage, illustLike, illustOriginUrl, illustOriginSite, illustNsfw, artistName FROM `data_illust` INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID WHERE illustNsfw=%s ORDER BY RAND() LIMIT 1",
         (acceptNsfw, )
     )[0]
     return jsonify(
@@ -419,7 +427,8 @@ def searchByRandom():
         }
     )
 
-@search_api.route('/image/saucenao',methods=["POST"], strict_slashes=False)
+
+@search_api.route('/image/saucenao', methods=["POST"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByImageAtSauceNao():
@@ -431,7 +440,7 @@ def searchByImageAtSauceNao():
         return jsonify(status=400, message="The file is not allowed")
     with TemporaryDirectory() as temp_path:
         # 画像を一旦保存して確認
-        uniqueID = str(uuid4()).replace("-","")
+        uniqueID = str(uuid4()).replace("-", "")
         uniqueID = b64encode(uniqueID.encode("utf8")).decode("utf8")[:-1]
         tempPath = os.path.join(temp_path, uniqueID)
         file.save(tempPath)
@@ -452,7 +461,8 @@ def searchByImageAtSauceNao():
             }
         )
 
-@search_api.route('/image',methods=["POST"], strict_slashes=False)
+
+@search_api.route('/image', methods=["POST"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByImage():
@@ -464,7 +474,7 @@ def searchByImage():
         return jsonify(status=400, message="The file is not allowed")
     with TemporaryDirectory() as temp_path:
         # 画像を一旦保存して確認
-        uniqueID = str(uuid4()).replace("-","")
+        uniqueID = str(uuid4()).replace("-", "")
         uniqueID = b64encode(uniqueID.encode("utf8")).decode("utf8")[:-1]
         tempPath = os.path.join(temp_path, uniqueID)
         file.save(tempPath)
@@ -502,7 +512,7 @@ def searchByImage():
             status=200,
             message='ok',
             data={
-                'hash':str(hash),
+                'hash': str(hash),
                 'illusts': illusts
             }
         )
