@@ -399,13 +399,65 @@ def searchByAll():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByRandom():
+    '''
+    REQ
+        nsfw= 1/0
+        artistID=NUMBER
+        tagID=NUMBER
+        charaID=NUMBER
+    '''
     acceptNsfw = request.args.get('nsfw', default=0, type=int)
-    if acceptNsfw != 0:
+    artistID = request.args.get('artistID', default=0, type=int)
+    tagID = request.args.get('tagID', default=0, type=int)
+    charaID = request.args.get('charaID', default=0, type=int)
+    count = request.args.get('count', default=1, type=int)
+    if acceptNsfw:
         acceptNsfw = 1
-    illust = g.db.get(
-        "SELECT illustID, data_illust.artistID, illustName, illustDescription, illustDate, illustPage, illustLike, illustOriginUrl, illustOriginSite, illustNsfw, artistName FROM `data_illust` INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID WHERE illustNsfw=%s ORDER BY RAND() LIMIT 1",
-        (acceptNsfw, )
-    )[0]
+    if count > 10:
+        count = 10
+    # 完全ランダム
+    if (not artistID) and (not tagID) and (not charaID):
+        illusts = g.db.get(
+            "SELECT illustID, data_illust.artistID,"
+            + " illustName, illustDescription,"
+            + " illustDate, illustPage, illustLike, illustOriginUrl,"
+            + " illustOriginSite, illustNsfw, artistName"
+            + " FROM `data_illust` INNER JOIN info_artist"
+            + " ON info_artist.artistID = data_illust.artistID"
+            + f" WHERE illustNsfw={acceptNsfw} ORDER BY RAND() LIMIT {count}"
+        )
+    # 作者指定ランダム
+    elif artistID:
+        illusts = g.db.get(
+            "SELECT illustID, data_illust.artistID,"
+            + " illustName, illustDescription,"
+            + " illustDate, illustPage, illustLike, illustOriginUrl,"
+            + " illustOriginSite, illustNsfw, artistName"
+            + " FROM `data_illust` INNER JOIN info_artist"
+            + " ON info_artist.artistID = data_illust.artistID"
+            + f" WHERE illustNsfw={acceptNsfw}"
+            + f" AND data_illust.artistID={artistID}"
+            + f" ORDER BY RAND() LIMIT {count}"
+        )
+    # タグ指定ランダム
+    # キャラ指定ランダム
+    else:
+        # つまりタグIDなので握りつぶす
+        if charaID:
+            tagID = charaID
+        illusts = g.db.get(
+            "SELECT illustID, data_illust.artistID,"
+            + " illustName, illustDescription,"
+            + " illustDate, illustPage, illustLike, illustOriginUrl,"
+            + " illustOriginSite, illustNsfw, artistName"
+            + " FROM `data_illust` INNER JOIN info_artist"
+            + " ON info_artist.artistID = data_illust.artistID"
+            + " WHERE illustID IN"
+            + f" (SELECT illustID FROM data_tag WHERE tagID={tagID})"
+            + f" AND illustNsfw={acceptNsfw} ORDER BY RAND() LIMIT {count}"
+        )
+    if not illusts:
+        return jsonify(404, message="No matched arts.")
     return jsonify(
         status=200,
         message="found",
@@ -424,7 +476,7 @@ def searchByRandom():
                 "artist": {
                     "name": illust[10]
                 }
-            }]
+            } for illust in illusts]
         }
     )
 
