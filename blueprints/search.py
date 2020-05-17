@@ -103,7 +103,8 @@ def searchByTag():
                     "name": i[10]
                 },
             } for i in illusts]
-        })
+        }
+    )
 
 
 @search_api.route("/artist", methods=["GET"])

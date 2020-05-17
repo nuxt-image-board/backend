@@ -245,7 +245,7 @@ def loginAccountWithLine():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def connectLineAccount(accountID):
-    #　一般権限&本人の要求 もしくは 全体管理者権限を要求
+    # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:
         return jsonify(status=403, message="You don't have enough permissions.")
     params = request.get_json()
@@ -403,25 +403,53 @@ def getAccount(accountID):
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def getUploadHistory(accountID):
+    '''
+    REQ
+     sort=d(ate)
+     order=d(esc)/a(sc)
+     page=1
+    '''
     if g.userID != accountID and g.permission < 9:
         return jsonify(status=400, message="You don't have enough permissions.")
-    resp = g.db.get(
-        "SELECT uploadID, uploadStartedDate, uploadFinishedDate, uploadStatus, illustID FROM data_upload WHERE userID=%s ORDER BY uploadID DESC LIMIT 5",
-        (accountID,)
+    sortMethod = "uploadID"
+    per_page = 20
+    pageID = request.args.get('page', default=1, type=int)
+    if pageID < 1:
+        pageID = 1
+    order = request.args.get('order', default="d", type=str)
+    order = "DESC" if order == "d" else "ASC"
+    uploadCount = g.db.get(
+        f"SELECT COUNT(uploadID) FROM data_upload WHERE userID={accountID}"
     )
-    if not resp or accountID in [0, 1]:
+    if not uploadCount or accountID in [0, 1]:
         return jsonify(status=404, message="The account data was not found.")
+    uploadCount = uploadCount[0][0]
+    pages, extra_page = divmod(uploadCount, per_page)
+    if extra_page > 0:
+        pages += 1
+    resp = g.db.get(
+        "SELECT uploadID, uploadStartedDate, uploadFinishedDate, uploadStatus,"
+        + f"illustID FROM data_upload WHERE userID={accountID}"
+        + f" ORDER BY {sortMethod} {order}"
+        + f" LIMIT {per_page} OFFSET {per_page*(pageID-1)}"
+    )
     recordApiRequest(g.userID, "getUploadHistory", param1=accountID)
     return jsonify(
         status=200,
         message="ok",
-        data=[{
-            "uploadID": d[0],
-            "started": d[1].strftime('%Y-%m-%d %H:%M:%S') if d[1] else None,
-            "finished": d[2].strftime('%Y-%m-%d %H:%M:%S') if d[2] else None,
-            "status": d[3],
-            "illustID": d[4]
-        } for d in resp]
+        data={
+            "title": "アップロード履歴",
+            "count": uploadCount,
+            "current": pageID,
+            "pages": pages,
+            "contents": [{
+                "uploadID": d[0],
+                "started": d[1].strftime('%Y-%m-%d %H:%M:%S') if d[1] else None,
+                "finished": d[2].strftime('%Y-%m-%d %H:%M:%S') if d[2] else None,
+                "status": d[3],
+                "illustID": d[4]
+            } for d in resp]
+        }
     )
 
 
@@ -439,7 +467,7 @@ def regenerateApiKey(accountID):
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def destroyAccount(accountID):
-    #　一般権限&本人の要求 もしくは 全体管理者権限を要求
+    # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.permission < 9:
         return jsonify(status=403, message="You don't have enough permissions.")
     resp = g.db.edit(

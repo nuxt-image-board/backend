@@ -75,6 +75,8 @@ def getTag(tagID):
     tagData = tagData[0]
     return jsonify(status=200, data={
         "id": tagData[0],
+        "user": tagData[1],
+        "type": tagData[2],
         "name": tagData[3],
         "description": tagData[4],
         "nsfw": tagData[5]
@@ -88,12 +90,24 @@ def editTag(tagID):
     params = request.get_json()
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")
-    validParams = [
-        "tagName",
-        "tagDescription",
-        "tagNsfw"
-    ]
-    params = {p: params[p] for p in params.keys() if p in validParams}
+    validParams = {
+        "name": "tagName",
+        "description": "tagDescription",
+        "nsfw": "tagNsfw",
+        "type": "tagType"
+    }
+    tagData = g.db.get(
+        "SELECT * FROM info_tag WHERE tagID = %s", (tagID,)
+    )
+    if len(tagData) < 1:
+        return jsonify(status=404, message="Specified tag was not found.")
+    if (g.userID != tagData[0][2]) and g.userPermission != 9:
+        return jsonify(status=401, message="You don't have enough permission.")
+    params = {
+        validParams[p]: params[p]
+        for p in params.keys()
+        if p in validParams.keys()
+    }
     if not params:
         return jsonify(status=400, message="Request parameters are invalid.")
     for p in params.keys():
