@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from request_handler import (
+from general import (
     app_before_request,
     app_after_request,
     app_teardown_appcontext,
@@ -28,7 +28,7 @@ from blueprints import (
 )
 
 '''
-ごちイラAPI α3
+ごちイラAPI
 
 <<アカウント>>
 POST   /accounts
@@ -103,9 +103,6 @@ POST /user/ID
 '''
 
 
-'''
-　メインアプリ構成
-'''
 def createApp():
     app = Flask(__name__)
     # 設定
@@ -144,6 +141,8 @@ def createApp():
     # Flask-CORSの登録
     CORS(app)
     return app
+
+
 app = createApp()
 
 if __name__ == '__main__':
