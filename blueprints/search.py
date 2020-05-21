@@ -1,8 +1,9 @@
-from flask import Blueprint, g, request, jsonify, escape
+from flask import Blueprint, g, request, jsonify, escape, current_app
 from .authorizator import auth, token_serializer
 from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
-from .lib.saucenao_client import SauceNaoClient, ImgurClient
+from .lib.saucenao_client import SauceNaoImageSearch
+import json
 from PIL import Image
 import imagehash
 from tempfile import TemporaryDirectory
@@ -500,10 +501,9 @@ def searchByImageAtSauceNao():
         fileExt = what_img(tempPath)
         if not fileExt:
             return jsonify(status=400, message="The file is not allowed")
-        icl = ImgurClient("2e9086b73644662")
-        cl = SauceNaoClient(
-            icl,
-            "170e7104a84bb2b2d975a2424e1ab230bc29ffa4"
+        cl = SauceNaoImageSearch(
+            current_app.config['imgurToken'],
+            current_app.config['saucenaoToken']
         )
         result = cl.search(tempPath)
         return jsonify(

@@ -26,6 +26,7 @@ from blueprints import (
     superuser_api,
     apiLimiter
 )
+import json
 
 '''
 ごちイラAPI
@@ -112,6 +113,10 @@ def createApp():
     app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
     app.config['ILLUST_FOLDER'] = 'static/illusts'
     app.config['TEMP_FOLDER'] = 'static/temp'
+    with open('blueprints/lib/imgur_auth.json', 'r') as f:
+        app.config['imgurToken'] = json.loads(f.read())['token']
+    with open('blueprints/lib/saucenao_auth.json', 'r') as f:
+        app.config['saucenaoToken'] = json.loads(f.read())['token']
     # 各ページルールを登録
     app.add_url_rule('/', 'index', app_index, strict_slashes=False)
     app.add_url_rule('/favicon.ico', 'favicon.ico', app_favicon)
