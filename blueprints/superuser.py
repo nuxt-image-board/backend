@@ -16,7 +16,7 @@ def garbageCollect():
     WHERE artistID NOT IN( SELECT DISTINCT artistID FROM data_illust)'''
     deleteTagDataReq = '''DELETE FROM data_tag
     WHERE illustID NOT IN( SELECT illustID FROM data_illust )'''
-    deleteTagInfoReq = '''SELECT * FROM info_tag
+    deleteTagInfoReq = '''DELETE FROM info_tag
     WHERE tagID NOT IN( SELECT tagID FROM data_tag ) AND tagID != 42'''
     req = [deleteArtistReq, deleteTagDataReq, deleteTagInfoReq]
     for r in req:
