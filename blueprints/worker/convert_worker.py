@@ -264,7 +264,10 @@ def processConvertRequest(params):
                 ig = IllustGetter()
                 imgs = ig.getIllust(params["imageUrl"])['illust']['imgs']
                 img_addr = imgs[page]["large_src"]
+                fileName = os.path.basename(imgs[page]['thumb_src'])
                 ig.downloadIllust(img_addr, fileOrigPath)
+                if os.path.isfile('static/temp/' + fileName):
+                    os.remove('static/temp/' + fileName)
             # ローカルから取る場合
             else:
                 shutil.move(params["imageUrl"][params["imageUrl"].find(
