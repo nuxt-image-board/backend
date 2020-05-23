@@ -21,7 +21,7 @@ def addNews(newsID):
         params = {p: g.validate(params[p]) for p in params.keys()}
     except:
         return jsonify(status=400, message="Request parameter is invalid.")
-    if g.db.g.userPermission != 9:
+    if g.userPermission != 9:
         return jsonify(status=401, message="You don't have permission")
     resp = g.db.edit(
         "INSERT INTO data_user (newsColor,newsTitle, newsBody) VALUES (%s,%s,%s)",
