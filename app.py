@@ -118,6 +118,10 @@ def createApp():
         app.config['imgurToken'] = json.loads(f.read())['token']
     with open('blueprints/lib/saucenao_auth.json', 'r') as f:
         app.config['saucenaoToken'] = json.loads(f.read())['token']
+    with open('blueprints/lib/onesignal_auth.json', 'r') as f:
+        data = json.loads(f.read())
+        app.config['onesignalToken'] = data['token']
+        app.config['onesignalAppId'] = data['appId']
     # 各ページルールを登録
     app.add_url_rule('/', 'index', app_index, strict_slashes=False)
     app.add_url_rule('/favicon.ico', 'favicon.ico', app_favicon)
