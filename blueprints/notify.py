@@ -6,6 +6,65 @@ from .recorder import recordApiRequest
 notify_api = Blueprint('notify_api', __name__)
 
 
+@notify_api.route('/setting/line', methods=["POST"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def initLineNotify():
+    return jsonify(status=503, message="Not implemented.")
+
+
+@notify_api.route('/setting/twitter', methods=["POST"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def initTwitterNotify():
+    return jsonify(status=503, message="Not implemented.")
+
+
+@notify_api.route('/setting/onesignal', methods=["POST"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def initOneSignalNotify():
+    params = request.get_json()
+    if not params:
+        return jsonify(status=400, message="Request parameters are not satisfied.")
+    if "id" not in params.keys():
+        return jsonify(status=400, message="Request parameters are not satisfied.")
+    # まず現状のデータをとってくる
+    resp = g.db.get(
+        "SELECT userOneSignalID FROM data_user WHERE userID=%s",
+        (g.userID,)
+    )
+    # 存在するなら追加する
+    if resp[0][0]:
+        if params["id"] not in resp[0][0]:
+            params["id"] += "," + resp[0][0]
+        else:
+            return jsonify(status=409, message="Duplicated playerID.")
+    # 変な値のインジェクションがされる可能性あるけど　ここに変なデータ入れて何ができるだろう
+    resp = g.db.edit(
+        "UPDATE data_user SET userOneSignalID=%s WHERE userID=%s",
+        (params["id"], g.userID)
+    )
+    if resp:
+        return jsonify(status=200, message="Registered.")
+    else:
+        return jsonify(status=400, message="Maximum devices exceeded.")
+
+
+@notify_api.route('/setting/onesignal', methods=["DELETE"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def resetOneSignalNotify():
+    resp = g.db.edit(
+        "UPDATE data_user SET userOneSignalID=NULL WHERE userID=%s",
+        (g.userID,)
+    )
+    if resp:
+        return jsonify(status=200, message="Deleted onesignal settings.")
+    else:
+        return jsonify(status=500, message="Server bombed.")
+
+
 @notify_api.route('/register', methods=["POST"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
