@@ -11,6 +11,9 @@ notify_api = Blueprint('notify_api', __name__)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def initLineNotify():
+    """
+    LINE Notifyを使う
+    """
     return jsonify(status=503, message="Not implemented.")
 
 
@@ -25,6 +28,9 @@ def initTwitterNotify():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def initOneSignalNotify():
+    """
+    サイト内で取得した OneSignalのPlayerIDをPOSTで送ってくる。
+    """
     params = request.get_json()
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")
@@ -149,7 +155,7 @@ def deleteNotify():
         )
         return jsonify(status=200, message="Delete succeed.")
     else:
-        return jsonify(status=500, message="Server bombed.")
+        return jsonify(status=404, message="The notify was not found.")
 
 
 @notify_api.route('/find', methods=["GET"], strict_slashes=False)

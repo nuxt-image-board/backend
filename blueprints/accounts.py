@@ -42,6 +42,11 @@ LINE_ENDPOINT = "https://api.line.me/oauth2/v2.1/token"
 LINE_REDIRECT_URI_LOGIN = "https://***REMOVED***/line_callback"
 LINE_REDIRECT_URI_CONNECT = "https://***REMOVED***/line_connect"
 
+NOTIFY_CHANNEL_ID = "	***REMOVED***"
+NOTIFY_CHANNEL_SECRET = "***REMOVED***"
+NOTIFY_ENDPOINT = "https://notify-bot.line.me/oauth/token"
+NOTIFY_REDIRECT_URI_CONNECT = "https://***REMOVED***/line_notify_callback"
+
 
 def generateApiKey(accountID):
     apiSeq, apiPermission = g.db.get(
@@ -287,6 +292,47 @@ def connectLineAccount(accountID):
     return jsonify(status=200, message="ok")
 
 
+@accounts_api.route('/<int:accountID>/connect/line_notify', methods=["POST"])
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def connectLineNotify(accountID):
+    # 一般権限&本人の要求 もしくは 全体管理者権限を要求
+    if g.userID != accountID and g.userPermission < 9:
+        return jsonify(status=403, message="You don't have enough permissions.")
+    params = request.get_json()
+    if not params:
+        return jsonify(status=403, message="Direct access is not allowed.")
+    if "code" not in params:
+        return jsonify(status=403, message="Direct access is not allowed.")
+    code = params["code"]
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    params = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": NOTIFY_REDIRECT_URI_CONNECT,
+        "client_id": NOTIFY_CHANNEL_ID,
+        "client_secret": NOTIFY_CHANNEL_SECRET
+    }
+    notifyResp = requests.post(
+        NOTIFY_ENDPOINT,
+        headers=headers,
+        data=params
+    )
+    if notifyResp.status_code != 200:
+        return jsonify(status=401, message="notify authorization failed")
+    notifyToken = notifyResp.json()['access_token']
+    resp = g.db.edit(
+        "UPDATE data_user SET userLineToken=%s WHERE userID=%s",
+        (notifyToken, g.userID)
+    )
+    if not resp:
+        return jsonify(status=500, message="Server bombed.")
+    recordApiRequest(g.userID, "connectLineNotify", param1=accountID)
+    return jsonify(status=200, message="ok")
+
+
 @accounts_api.route('/me', methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
@@ -334,7 +380,12 @@ def getSelfAccount():
                 WHERE
                     inviter = data_user.userID
             ) AS inviteCount,
-            data_user.userInviteEnabled
+            data_user.userInviteEnabled,
+            (
+                CASE WHEN data_user.userLineToken IS NOT NULL THEN 1 ELSE 0
+                END
+            ) AS isLineNotifyEnabled,
+            data_user.userOneSignalID
         FROM
             data_user
         LEFT OUTER JOIN
@@ -359,6 +410,8 @@ def getSelfAccount():
             "name": resp[2],
             "favorite": resp[3],
             "lineConnect": resp[4],
+            "lineNotify": resp[12],
+            "oneSignalNotify": resp[13],
             "registeredDate": resp[5].strftime('%Y-%m-%d %H:%M:%S'),
             "inviter": {
                 "id": resp[6],
@@ -490,7 +543,7 @@ def destroyAccount(accountID):
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def editAccount(accountID):
-    #　一般権限&本人の要求 もしくは 全体管理者権限を要求
+    # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.permission < 9:
         return jsonify(status=403, message="You don't have enough permissions.")
     params = request.get_json()
