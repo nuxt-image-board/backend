@@ -8,6 +8,7 @@ from .search import search_api
 from .tags import tags_api
 from .scrape import scrape_api
 from .news import news_api
+from .notify import notify_api
 from .invites import invites_api
 from .superuser import superuser_api
 from .authorizator import auth
@@ -24,6 +25,7 @@ __all__ = [
     "tags_api",
     "scrape_api",
     "news_api",
+    "notify_api",
     "invites_api",
     "superuser_api",
     "auth",

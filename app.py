@@ -22,6 +22,7 @@ from blueprints import (
     tags_api,
     scrape_api,
     news_api,
+    notify_api,
     invites_api,
     superuser_api,
     apiLimiter
@@ -130,6 +131,7 @@ def createApp():
     app.register_blueprint(tags_api, url_prefix='/tags')
     app.register_blueprint(scrape_api, url_prefix='/scrape')
     app.register_blueprint(news_api, url_prefix='/news')
+    app.register_blueprint(notify_api, url_prefix='/notify')
     app.register_blueprint(invites_api, url_prefix='/invites')
     app.register_blueprint(superuser_api, url_prefix='/superuser')
     # リクエスト共通処理の登録
