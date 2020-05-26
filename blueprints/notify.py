@@ -104,14 +104,14 @@ def addNotify():
             recordApiRequest(g.userID, "addNotify", param1=createdID)
             if userOneSignalID:
                 userOneSignalID = userOneSignalID.split(",")
-                cl = OneSignalNotifyClient(
+                cl = OneSignalWrappedClient(
                     current_app.config['onesignalAppId'],
                     current_app.config['onesignalToken']
                 )
                 cl.sendNotify(
+                    userOneSignalID,
                     "通知設定が変更されました",
                     "新着イラストの通知はこのように送られます",
-                    playerIds=userOneSignalID
                 )
         return jsonify(status=200, message="Registered.")
     else:
