@@ -2,7 +2,7 @@ from flask import Flask, g, request, jsonify, Blueprint, current_app
 from .authorizator import auth
 from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
-from .lib.onesignal_client import OneSignalNotifyClient
+from .lib.onesignal_client import OneSignalWrappedClient
 
 notify_api = Blueprint('notify_api', __name__)
 
