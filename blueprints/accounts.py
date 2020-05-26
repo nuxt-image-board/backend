@@ -42,10 +42,10 @@ LINE_ENDPOINT = "https://api.line.me/oauth2/v2.1/token"
 LINE_REDIRECT_URI_LOGIN = "https://***REMOVED***/line_callback"
 LINE_REDIRECT_URI_CONNECT = "https://***REMOVED***/line_connect"
 
-NOTIFY_CHANNEL_ID = "	***REMOVED***"
+NOTIFY_CHANNEL_ID = "***REMOVED***"
 NOTIFY_CHANNEL_SECRET = "***REMOVED***"
 NOTIFY_ENDPOINT = "https://notify-bot.line.me/oauth/token"
-NOTIFY_REDIRECT_URI_CONNECT = "https://***REMOVED***/line_notify_callback"
+NOTIFY_REDIRECT_URI_CONNECT = "https://***REMOVED***/line_notify_connect"
 
 
 def generateApiKey(accountID):
@@ -320,6 +320,7 @@ def connectLineNotify(accountID):
         headers=headers,
         data=params
     )
+    print(notifyResp.text)
     if notifyResp.status_code != 200:
         return jsonify(status=401, message="notify authorization failed")
     notifyToken = notifyResp.json()['access_token']
