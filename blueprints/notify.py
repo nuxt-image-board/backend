@@ -162,6 +162,7 @@ def deleteNotify():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def findNotify():
+    '''方法も指定して通知が設定されているか確認'''
     targetType = request.args.get('type', default=None, type=int)
     targetID = request.args.get('id', default=None, type=int)
     targetMethod = request.args.get('method', default=None, type=int)
@@ -185,32 +186,79 @@ def findNotify():
         return jsonify(status=404, message="The notify was not found")
 
 
+@notify_api.route('/finds', methods=["GET"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def findsNotify():
+    '''通知が設定されているか確認'''
+    targetType = request.args.get('type', default=None, type=int)
+    targetID = request.args.get('id', default=None, type=int)
+    recordApiRequest(
+        g.userID,
+        "findsNotify",
+        param1=targetType,
+        param2=targetID
+    )
+    data = g.db.get(
+        "SELECT * FROM data_notify "
+        + "WHERE userID=%s AND targetType=%s AND targetID=%s",
+        (g.userID, targetType, targetID,)
+    )
+    isOneSignalExists = True if [d for d in data if d[4] == 0] else False
+    isLineExists = True if [d for d in data if d[4] == 1] else False
+    isTwitterExists = True if [d for d in data if d[4] == 2] else False
+    return jsonify(
+        status=200,
+        message="ok",
+        data={
+            "web": isOneSignalExists,
+            "line": isLineExists,
+            "twitter": isTwitterExists
+        }
+    )
+
+
 @notify_api.route('/list', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def listNotify():
-    maxNotify = request.args.get('count', default=50, type=int)
-    if maxNotify > 100:
-        maxNotify = 100
+    pageID = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('count', default=50, type=int)
+    if per_page > 100:
+        per_page = 100
+    notifyCount = g.db.get(
+        "SELECT COUNT(DISTINCT notifyID) FROM data_notify WHERE userID=%s",
+        (g.userID,)
+    )[0][0]
+    pages, extra_page = divmod(notifyCount, per_page)
+    if extra_page > 0:
+        pages += 1
     datas = g.db.get(
-        "SELECT * FROM data_notify ORDER BY notifyID DESC LIMIT %s WHERE userID=%s",
-        (maxNotify, g.userID)
+        "SELECT * FROM data_notify "
+        + "WHERE userID=%s "
+        + "ORDER BY notifyID DESC "
+        + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        (g.userID,)
     )
     recordApiRequest(
         g.userID,
         "listNotify",
-        param1=maxNotify
+        param1=per_page,
+        param2=pageID
     )
     return jsonify(
         status=200,
-        data=[
-            {
-                "notifyID": d[0],
-                "type":d[2],
+        data={
+            "title": "通知設定",
+            "count": notifyCount,
+            "current": pageID,
+            "pages": pages,
+            "contents": [{
+                "type": d[2],
                 "id": d[3],
                 "method": d[4]
-            } for d in datas
-        ]
+            } for d in datas]
+        }
     )
 
 
