@@ -386,7 +386,8 @@ def getSelfAccount():
                 CASE WHEN data_user.userLineToken IS NOT NULL THEN 1 ELSE 0
                 END
             ) AS isLineNotifyEnabled,
-            data_user.userOneSignalID
+            data_user.userOneSignalID,
+            data_user.userPermission
         FROM
             data_user
         LEFT OUTER JOIN
@@ -413,6 +414,7 @@ def getSelfAccount():
             "lineConnect": resp[4],
             "lineNotify": resp[12],
             "oneSignalNotify": resp[13],
+            "permission": resp[14],
             "registeredDate": resp[5].strftime('%Y-%m-%d %H:%M:%S'),
             "inviter": {
                 "id": resp[6],
