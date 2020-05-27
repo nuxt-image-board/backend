@@ -16,7 +16,7 @@ catalog_api = Blueprint('catalog_api', __name__)
 def listArtists():
     '''
     REQ
-     sort=c(ount)/d(ate)/l(ikes)
+     sort=c(ount)/d(ate)/l(ikes)/n(ame)
      order=d(esc)/a(sc)
      page=1
     '''
@@ -27,7 +27,8 @@ def listArtists():
     sortDict = {
         "d": "LAST_UPDATE",
         "l": "LIKES",
-        "c": "CNT"
+        "c": "CNT",
+        "n": "artistName"
     }
     sortMethod = request.args.get('sort', default="c", type=str)
     sortMethod = sortDict[sortMethod] if sortMethod in sortDict.keys() else "CNT"
@@ -83,7 +84,7 @@ def listArtists():
 def listTags():
     '''
     REQ
-     sort=c(ount)/d(ate)/l(ikes)
+     sort=c(ount)/d(ate)/l(ikes)/n(ame)
      order=d(esc)/a(sc)
      page=1
     '''
@@ -94,7 +95,8 @@ def listTags():
     sortDict = {
         "d": "LAST_UPDATE",
         "l": "LIKES",
-        "c": "CNT"
+        "c": "CNT",
+        "n": "tagName"
     }
     sortMethod = request.args.get('sort', default="c", type=str)
     sortMethod = sortDict[sortMethod] if sortMethod in sortDict.keys() else "CNT"
@@ -146,7 +148,7 @@ def listTags():
 def listCharacters():
     '''
     REQ
-     sort=c(ount)/d(ate)/l(ikes)
+     sort=c(ount)/d(ate)/l(ikes)/n(ame)
      order=d(esc)/a(sc)
      page=1
     '''
@@ -157,7 +159,8 @@ def listCharacters():
     sortDict = {
         "d": "LAST_UPDATE",
         "l": "LIKES",
-        "c": "CNT"
+        "c": "CNT",
+        "n": "tagName"
     }
     sortMethod = request.args.get('sort', default="c", type=str)
     sortMethod = sortDict[sortMethod] if sortMethod in sortDict.keys() else "CNT"
