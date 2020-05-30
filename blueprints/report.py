@@ -12,7 +12,7 @@ def reportArt(artID):
 @report_api.route('/tag/<int:tagID>',methods=["POST"], strict_slashes=False)
 def reportTag(tagID):
     return "Not implemeted"
-    
+
 @report_api.route('/user/<int:userID>',methods=["POST"], strict_slashes=False)
 def reportUser(userID):
     return "Not implemeted"

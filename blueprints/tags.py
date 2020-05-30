@@ -14,6 +14,8 @@ tags_api = Blueprint('tags_api', __name__)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def addTag():
+    if g.userPermission not in [0, 9]:
+        return jsonify(status=400, message='Bad request')
     params = request.get_json()
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")
@@ -49,6 +51,8 @@ def addTag():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def removeTag(tagID):
+    if g.userPermission not in [0, 9]:
+        return jsonify(status=400, message='Bad request')
     if not g.db.has("info_tag", "tagID=%s", (tagID,)):
         return jsonify(status=404, message="Specified tag was not found")
     illustCount = g.db.get(
@@ -87,6 +91,8 @@ def getTag(tagID):
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def editTag(tagID):
+    if g.userPermission not in [0, 9]:
+        return jsonify(status=400, message='Bad request')
     params = request.get_json()
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")

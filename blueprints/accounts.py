@@ -465,7 +465,7 @@ def getUploadHistory(accountID):
      order=d(esc)/a(sc)
      page=1
     '''
-    if g.userID != accountID and g.permission < 9:
+    if g.userID != accountID and g.userPermission < 9:
         return jsonify(status=400, message="You don't have enough permissions.")
     sortMethod = "uploadID"
     per_page = 20
@@ -513,7 +513,7 @@ def getUploadHistory(accountID):
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def regenerateApiKey(accountID):
-    if g.userID != accountID and g.permission < 9:
+    if g.userID != accountID and g.userPermission < 9:
         return jsonify(status=400, message="You don't have enough permissions.")
     apiKey = generateApiKey(accountID)
     return jsonify(status=201, message="ok", apiKey=apiKey)
@@ -524,7 +524,7 @@ def regenerateApiKey(accountID):
 @apiLimiter.limit(handleApiPermission)
 def destroyAccount(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
-    if g.userID != accountID and g.permission < 9:
+    if g.userID != accountID and g.userPermission < 9:
         return jsonify(status=403, message="You don't have enough permissions.")
     resp = g.db.edit(
         "UPDATE illust_main SET userID=0 WHERE userID=?",
@@ -547,7 +547,7 @@ def destroyAccount(accountID):
 @apiLimiter.limit(handleApiPermission)
 def editAccount(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
-    if g.userID != accountID and g.permission < 9:
+    if g.userID != accountID and g.userPermission < 9:
         return jsonify(status=403, message="You don't have enough permissions.")
     params = request.get_json()
     validParams = [
@@ -565,7 +565,7 @@ def editAccount(accountID):
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")
     for p in params.keys():
-        if p == "userPermission" and g.permission < 9:
+        if p == "userPermission" and g.userPermission < 9:
             continue
         if p == "userPassword":
             params[p] = g.validate(params[p], lengthMin=5, lengthMax=50)

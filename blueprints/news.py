@@ -10,6 +10,8 @@ news_api = Blueprint('news_api', __name__)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def addNews(newsID):
+    if g.userPermission != 9:
+        return jsonify(status=400, message="Bad request")
     params = request.get_json()
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")
@@ -41,7 +43,7 @@ def addNews(newsID):
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def deleteNews(newsID):
-    if g.db.g.userPermission != 9:
+    if g.userPermission != 9:
         return jsonify(status=401, message="You don't have permission")
     resp = g.db.edit(
         "DELETE FROM data_news WHERE newsID=%s",

@@ -486,6 +486,8 @@ def searchByRandom():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByImageAtSauceNao():
+    if g.permisssion not in [0, 9]:
+        return jsonify(status=400, message="Bad request")
     if "file" not in request.files:
         return jsonify(status=400, message="File must be included")
     file = request.files['file']
@@ -519,6 +521,8 @@ def searchByImageAtSauceNao():
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def searchByImage():
+    if g.permisssion not in [0, 9]:
+        return jsonify(status=400, message="Bad request")
     if "file" not in request.files:
         return jsonify(status=400, message="File must be included")
     file = request.files['file']
