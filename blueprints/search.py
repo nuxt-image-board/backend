@@ -57,9 +57,9 @@ def searchByTag():
         "SELECT COUNT(illustID) FROM data_tag WHERE tagID = %s",
         (tagID,)
     )
-    if not len(illustCount):
-        return jsonify(status=404, message="No matched illusts.")
     illustCount = illustCount[0][0]
+    if illustCount == 0:
+        return jsonify(status=404, message="No matched illusts.")
     tagName = g.db.get(
         "SELECT tagName FROM info_tag WHERE tagID = %s",
         (tagID,)
@@ -134,9 +134,9 @@ def searchByArtist():
         "SELECT COUNT(illustID) FROM data_illust WHERE artistID = %s",
         (artistID,)
     )
-    if not len(illustCount):
-        return jsonify(status=404, message="No matched illusts.")
     illustCount = illustCount[0][0]
+    if illustCount == 0:
+        return jsonify(status=404, message="No matched illusts.")
     artistName = g.db.get(
         "SELECT artistName FROM info_artist WHERE artistID = %s",
         (artistID,)
@@ -209,9 +209,9 @@ def searchByCharacter():
         "SELECT COUNT(illustID) FROM data_tag WHERE tagID = %s",
         (charaID,)
     )
-    if not len(illustCount):
-        return jsonify(status=404, message="No matched illusts.")
     illustCount = illustCount[0][0]
+    if illustCount == 0:
+        return jsonify(status=404, message="No matched illusts.")
     charaName = g.db.get(
         "SELECT tagName FROM info_tag WHERE tagID = %s",
         (charaID,)
@@ -286,9 +286,9 @@ def searchByKeyword():
         + "WHERE illustName LIKE %s",
         ("%"+keyword+"%",)
     )
-    if not len(illustCount):
-        return jsonify(status=404, message="No matched illusts.")
     illustCount = illustCount[0][0]
+    if illustCount == 0:
+        return jsonify(status=404, message="No matched illusts.")
     pages, extra_page = divmod(illustCount, per_page)
     if extra_page > 0:
         pages += 1
@@ -353,9 +353,9 @@ def searchByAll():
     illustCount = g.db.get(
         "SELECT COUNT(illustID) FROM data_illust"
     )
-    if not len(illustCount):
-        return jsonify(status=404, message="No matched illusts.")
     illustCount = illustCount[0][0]
+    if illustCount == 0:
+        return jsonify(status=404, message="No matched illusts.")
     pages, extra_page = divmod(illustCount, per_page)
     if extra_page > 0:
         pages += 1
