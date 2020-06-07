@@ -320,7 +320,6 @@ def connectLineNotify(accountID):
         headers=headers,
         data=params
     )
-    print(notifyResp.text)
     if notifyResp.status_code != 200:
         return jsonify(status=401, message="notify authorization failed")
     notifyToken = notifyResp.json()['access_token']
@@ -554,25 +553,38 @@ def editAccount(accountID):
         "userDisplayID",
         "userName",
         "userPassword",
+        "userOldPassword",
         "userFavorite",
         "userTheme",
         "userPermission",
         "userLineID",
         "userTwitterID",
     ]
-    params = {p: g.validate(params[p])
-              for p in params.keys() if p in validParams}
+    params = {
+        p: g.validate(params[p])
+        for p in params.keys() if p in validParams
+    }
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")
     for p in params.keys():
+        if p == "userOldPassword":
+            continue
         if p == "userPermission" and g.userPermission < 9:
             continue
         if p == "userPassword":
+            params["userOldPassword"] = "***REMOVED***"+params["userOldPassword"]
+            old_passwd = hashlib.sha256(params["userOldPassword"].encode("utf8")).hexdigest()
+            resp = g.db.get(
+                "SELECT userID FROM data_user WHERE userPassword = %s",
+                (old_passwd,)
+            )
+            if resp == []:
+                return jsonify(status=400, message="password mismatch")
             params[p] = g.validate(params[p], lengthMin=5, lengthMax=50)
             params[p] = "***REMOVED***"+params[p]
             params[p] = hashlib.sha256(params[p].encode("utf8")).hexdigest()
         resp = g.db.edit(
-            "UPDATE `data_user` SET `%s`=%s WHERE userID=%s" % (p),
+            "UPDATE `data_user` SET `" + p + "`=%s WHERE userID=%s",
             (params[p], g.userID,)
         )
         if not resp:
