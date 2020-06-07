@@ -149,8 +149,13 @@ def createApp():
     app.register_error_handler(500, error_server_bombed)
     # Flask-Limiterの登録
     apiLimiter.init_app(app)
-    # Flask-CORSの登録
-    CORS(app)
+    # Flask-CORSの登録 (CORSは7日間キャッシュする)
+    CORS(
+        app,
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        origins=["http://localhost:3000", "https://***REMOVED***"],
+        max_age=604800
+    )
     return app
 
 
