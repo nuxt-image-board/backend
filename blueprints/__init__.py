@@ -13,6 +13,7 @@ from .invites import invites_api
 from .superuser import superuser_api
 from .authorizator import auth
 from .limiter import apiLimiter
+from .cache import apiCache
 
 __all__ = [
     "accounts_api",
@@ -29,5 +30,6 @@ __all__ = [
     "invites_api",
     "superuser_api",
     "auth",
-    "apiLimiter"
+    "apiLimiter",
+    "apiCache"
 ]

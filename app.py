@@ -25,7 +25,8 @@ from blueprints import (
     notify_api,
     invites_api,
     superuser_api,
-    apiLimiter
+    apiLimiter,
+    apiCache
 )
 import json
 
@@ -149,6 +150,8 @@ def createApp():
     app.register_error_handler(500, error_server_bombed)
     # Flask-Limiterの登録
     apiLimiter.init_app(app)
+    # Flask-Cacheの登録
+    apiCache.init_app(app)
     # Flask-CORSの登録 (CORSは7日間キャッシュする)
     CORS(
         app,

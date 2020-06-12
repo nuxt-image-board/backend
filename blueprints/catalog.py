@@ -2,6 +2,7 @@ from flask import Blueprint, request, g, jsonify
 from .authorizator import auth, token_serializer
 from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
+from .cache import apiCache
 
 catalog_api = Blueprint('catalog_api', __name__)
 
@@ -13,6 +14,7 @@ catalog_api = Blueprint('catalog_api', __name__)
 @catalog_api.route('/artists', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7)
 def listArtists():
     '''
     REQ
@@ -81,6 +83,7 @@ def listArtists():
 @catalog_api.route('/tags', methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7)
 def listTags():
     '''
     REQ
@@ -145,6 +148,7 @@ def listTags():
 @catalog_api.route('/characters', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7)
 def listCharacters():
     '''
     REQ

@@ -3,6 +3,7 @@ from .authorizator import auth, token_serializer
 from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
 from .lib.saucenao_client import SauceNaoImageSearch
+from .cache import apiCache
 import json
 from PIL import Image
 import imagehash
@@ -34,6 +35,7 @@ search_api = Blueprint('search_api', __name__)
 @search_api.route("/tag", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7)
 def searchByTag():
     '''
     REQ
@@ -111,6 +113,7 @@ def searchByTag():
 @search_api.route("/artist", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7)
 def searchByArtist():
     '''
     REQ
@@ -186,6 +189,7 @@ def searchByArtist():
 @search_api.route("/character", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7)
 def searchByCharacter():
     '''
     REQ
@@ -262,6 +266,7 @@ def searchByCharacter():
 @search_api.route("/keyword", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7)
 def searchByKeyword():
     '''
     REQ
@@ -334,6 +339,7 @@ def searchByKeyword():
 @search_api.route('/all', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7)
 def searchByAll():
     '''
     REQ
