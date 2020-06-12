@@ -35,7 +35,7 @@ search_api = Blueprint('search_api', __name__)
 @search_api.route("/tag", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7)
+@apiCache.cached(timeout=7, query_string=True)
 def searchByTag():
     '''
     REQ
@@ -113,7 +113,7 @@ def searchByTag():
 @search_api.route("/artist", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7)
+@apiCache.cached(timeout=7, query_string=True)
 def searchByArtist():
     '''
     REQ
@@ -189,7 +189,7 @@ def searchByArtist():
 @search_api.route("/character", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7)
+@apiCache.cached(timeout=7, query_string=True)
 def searchByCharacter():
     '''
     REQ
@@ -266,7 +266,7 @@ def searchByCharacter():
 @search_api.route("/keyword", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7)
+@apiCache.cached(timeout=7, query_string=True)
 def searchByKeyword():
     '''
     REQ
@@ -339,7 +339,7 @@ def searchByKeyword():
 @search_api.route('/all', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7)
+@apiCache.cached(timeout=7, query_string=True)
 def searchByAll():
     '''
     REQ

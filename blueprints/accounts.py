@@ -460,7 +460,7 @@ def getAccount(accountID):
 @accounts_api.route('/<int:accountID>/upload_history', methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=10)
+@apiCache.cached(timeout=10, query_string=True)
 def getUploadHistory(accountID):
     '''
     REQ

@@ -14,7 +14,7 @@ catalog_api = Blueprint('catalog_api', __name__)
 @catalog_api.route('/artists', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7)
+@apiCache.cached(timeout=7, query_string=True)
 def listArtists():
     '''
     REQ
@@ -83,7 +83,7 @@ def listArtists():
 @catalog_api.route('/tags', methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7)
+@apiCache.cached(timeout=7, query_string=True)
 def listTags():
     '''
     REQ
@@ -148,7 +148,7 @@ def listTags():
 @catalog_api.route('/characters', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7)
+@apiCache.cached(timeout=7, query_string=True)
 def listCharacters():
     '''
     REQ

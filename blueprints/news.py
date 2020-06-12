@@ -60,7 +60,7 @@ def deleteNews(newsID):
 @news_api.route('/list', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=1800)
+@apiCache.cached(timeout=1800, query_string=True)
 def listNews():
     maxNews = request.args.get('count', default=50, type=int)
     datas = g.db.get(
