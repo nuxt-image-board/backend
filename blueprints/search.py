@@ -12,8 +12,25 @@ from base64 import b64encode
 from uuid import uuid4
 import os.path
 from imghdr import what as what_img
+from imghdr import tests
 
 ALLOWED_EXTENSIONS = ["gif", "png", "jpg", "jpeg", "webp"]
+
+JPEG_MARK = b'\xff\xd8\xff\xdb\x00C\x00\x08\x06\x06' \
+            b'\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f'
+
+
+def test_jpeg(h, f):
+    """JPEG data in JFIF format"""
+    if b'JFIF' in h[:23]:
+        return 'jpeg'
+    """JPEG with small header"""
+    if len(h) >= 32 and 67 == h[5] and h[:32] == JPEG_MARK:
+        return 'jpeg'
+    """JPEG data in JFIF or Exif format"""
+    if h[6:10] in (b'JFIF', b'Exif') or h[:2] == b'\xff\xd8':
+        return 'jpeg'
+tests.append(test_jpeg)
 
 
 def isNotAllowedFile(filename):
@@ -72,7 +89,7 @@ def searchByTag():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName, illustExtension "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
         + "WHERE illustID IN "
         + "(SELECT illustID FROM data_tag WHERE tagID=%s) "
@@ -105,6 +122,7 @@ def searchByTag():
                 "artist": {
                     "name": i[10]
                 },
+                "extension": i[11]
             } for i in illusts]
         }
     )
@@ -150,7 +168,7 @@ def searchByArtist():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,illustExtension "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
         + "WHERE data_illust.artistID = %s "
         + "ORDER BY %s %s " % (sortMethod, order)
@@ -182,6 +200,7 @@ def searchByArtist():
                 "artist": {
                     "name": i[10]
                 },
+                "extension": i[11]
             } for i in illusts]
         })
 
@@ -226,7 +245,7 @@ def searchByCharacter():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,illustExtension "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
         + "WHERE illustID IN "
         + "(SELECT illustID FROM data_tag WHERE tagID=%s) "
@@ -259,6 +278,7 @@ def searchByCharacter():
                 "artist": {
                     "name": i[10]
                 },
+                "extension": i[11]
             } for i in illusts]
         })
 
@@ -300,7 +320,7 @@ def searchByKeyword():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,illustExtension "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
         + "WHERE illustName LIKE %s"
         + "ORDER BY %s %s " % (sortMethod, order)
@@ -332,6 +352,7 @@ def searchByKeyword():
                 "artist": {
                     "name": i[10]
                 },
+                "extension": i[11]
             } for i in illusts]
         })
 
@@ -368,7 +389,7 @@ def searchByAll():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,illustExtension "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
         + "ORDER BY %s %s " % (sortMethod, order)
         + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1))
@@ -398,6 +419,7 @@ def searchByAll():
                 "artist": {
                     "name": i[10]
                 },
+                "extension": i[11]
             } for i in illusts]
         })
 
@@ -428,7 +450,7 @@ def searchByRandom():
             "SELECT illustID, data_illust.artistID,"
             + " illustName, illustDescription,"
             + " illustDate, illustPage, illustLike, illustOriginUrl,"
-            + " illustOriginSite, illustNsfw, artistName"
+            + " illustOriginSite, illustNsfw, artistName,illustExtension"
             + " FROM `data_illust` INNER JOIN info_artist"
             + " ON info_artist.artistID = data_illust.artistID"
             + f" WHERE illustNsfw={acceptNsfw} ORDER BY RAND() LIMIT {count}"
@@ -439,7 +461,7 @@ def searchByRandom():
             "SELECT illustID, data_illust.artistID,"
             + " illustName, illustDescription,"
             + " illustDate, illustPage, illustLike, illustOriginUrl,"
-            + " illustOriginSite, illustNsfw, artistName"
+            + " illustOriginSite, illustNsfw, artistName,illustExtension"
             + " FROM `data_illust` INNER JOIN info_artist"
             + " ON info_artist.artistID = data_illust.artistID"
             + f" WHERE illustNsfw={acceptNsfw}"
@@ -456,7 +478,7 @@ def searchByRandom():
             "SELECT illustID, data_illust.artistID,"
             + " illustName, illustDescription,"
             + " illustDate, illustPage, illustLike, illustOriginUrl,"
-            + " illustOriginSite, illustNsfw, artistName"
+            + " illustOriginSite, illustNsfw, artistName,illustExtension"
             + " FROM `data_illust` INNER JOIN info_artist"
             + " ON info_artist.artistID = data_illust.artistID"
             + " WHERE illustID IN"
@@ -482,7 +504,8 @@ def searchByRandom():
                 "nsfw": illust[9],
                 "artist": {
                     "name": illust[10]
-                }
+                },
+                "extension": illust[11]
             } for illust in illusts]
         }
     )
@@ -548,7 +571,7 @@ def searchByImage():
         hash = int(str(imagehash.phash(Image.open(tempPath))), 16)
         # 検索SQL
         illusts = g.db.get(
-            "SELECT illustID, data_illust.artistID, BIT_COUNT(illustHash ^ %s) AS SAME, illustName, illustDescription, illustDate, illustPage, illustLike, illustOriginUrl, illustOriginSite, illustNsfw, artistName FROM `data_illust` INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID HAVING SAME < 5 ORDER BY SAME DESC LIMIT 10",
+            "SELECT illustID, data_illust.artistID, BIT_COUNT(illustHash ^ %s) AS SAME, illustName, illustDescription, illustDate, illustPage, illustLike, illustOriginUrl, illustOriginSite, illustNsfw, artistName, illustExtension FROM `data_illust` INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID HAVING SAME < 5 ORDER BY SAME DESC LIMIT 10",
             (hash,)
         )
         if len(illusts):
@@ -566,7 +589,8 @@ def searchByImage():
                 "nsfw": i[10],
                 "artist": {
                     "name": i[11]
-                }
+                },
+                "extension": i[12]
             } for i in illusts]
         else:
             illusts = []
