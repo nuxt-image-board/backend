@@ -29,14 +29,20 @@ def addTag():
     if g.db.has("info_tag", "tagName=%s", (tagName,)):
         return jsonify(status=409, message="The tag is already exist.")
     tagDescription = params.get('tagDescription', None)
+    try:
+        tagType = int(params.get('tagType', 0))
+        if tagType > 2:
+            tagType = 0
+    except:
+        tagType = 0
     nsfw = params.get('nsfw', 0)
     if nsfw in ["1", 1, "True", "true"]:
         nsfw = "1"
     else:
         nsfw = "0"
     resp = g.db.edit(
-        "INSERT INTO `info_tag`(`userID`,`tagType`,`tagName`,`tagDescription`,`tagNsfw`) VALUES (%s,0,%s,%s,%s);",
-        (g.userID, tagName, tagDescription, nsfw)
+        "INSERT INTO `info_tag`(`userID`,`tagType`,`tagName`,`tagDescription`,`tagNsfw`) VALUES (%s,%s,%s,%s,%s);",
+        (g.userID, tagType, tagName, tagDescription, nsfw)
     )
     if resp:
         createdID = g.db.get(

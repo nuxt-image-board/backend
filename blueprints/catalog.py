@@ -21,9 +21,11 @@ def listArtists():
      sort=c(ount)/d(ate)/l(ikes)/n(ame)
      order=d(esc)/a(sc)
      page=1
+     keyword=''
     '''
     per_page = 20
     pageID = request.args.get('page', default=1, type=int)
+    keyword = request.args.get('keyword', default='', type=str)
     if pageID < 1:
         pageID = 1
     sortDict = {
@@ -49,8 +51,10 @@ def listArtists():
         + "SUM(illustLike) AS LIKES,"
         + "MAX(illustID) AS LAST_UPDATE "
         + "FROM data_illust GROUP BY artistID ) AS T1 "
+        + "WHERE artistName LIKE %s"
         + f"ORDER BY {sortMethod} {order} "
-        + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}"
+        + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        (f'%{keyword}%',)
     )
     # ないとページ番号が不正なときに爆発する
     if not len(datas):
@@ -90,9 +94,11 @@ def listTags():
      sort=c(ount)/d(ate)/l(ikes)/n(ame)
      order=d(esc)/a(sc)
      page=1
+     keyword=''
     '''
     per_page = 20
     pageID = request.args.get('page', default=1, type=int)
+    keyword = request.args.get('keyword', default='', type=str)
     if pageID < 1:
         pageID = 1
     sortDict = {
@@ -118,8 +124,9 @@ def listTags():
         + " GROUP BY tagID) AS T1 NATURAL JOIN"
         + " ( SELECT tagID, SUM(illustLike) AS LIKES FROM data_illust"
         + " NATURAL JOIN data_tag GROUP BY tagID ) AS T2"
-        + f" WHERE tagType=0  ORDER BY {sortMethod} {order}"
-        + f" LIMIT {per_page} OFFSET {per_page*(pageID-1)}"
+        + f" WHERE tagType=0  AND tagName LIKE %s ORDER BY {sortMethod} {order}"
+        + f" LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        (f'%{keyword}%', )
     )
     # ないとページ番号が不正なときに爆発する
     if not len(datas):
@@ -155,9 +162,11 @@ def listCharacters():
      sort=c(ount)/d(ate)/l(ikes)/n(ame)
      order=d(esc)/a(sc)
      page=1
+     keyword=''
     '''
     per_page = 20
     pageID = request.args.get('page', default=1, type=int)
+    keyword = request.args.get('keyword', default='', type=str)
     if pageID < 1:
         pageID = 1
     sortDict = {
@@ -184,9 +193,10 @@ def listCharacters():
         + " NATURAL JOIN info_tag GROUP BY tagID) AS T1"
         + " NATURAL JOIN ( SELECT tagID, SUM(illustLike) AS LIKES"
         + " FROM data_illust NATURAL JOIN data_tag GROUP BY tagID ) AS T2"
-        + " WHERE tagType=1"
+        + " WHERE tagType=1 AND tagName LIKE %s"
         + f" ORDER BY {sortMethod} {order}"
-        + f" LIMIT {per_page} OFFSET {per_page*(pageID-1)}"
+        + f" LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        (f'%{keyword}%', )
     )
     # ないとページ番号が不正なときに爆発する
     if not len(datas):
