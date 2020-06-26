@@ -403,6 +403,10 @@ def getSelfAccount():
             data_user.userApiKey = %s""",
         (g.userApiKey,)
     )[0]
+    mylistID = g.db.get(
+        "SELECT MIN(mylistID) FROM info_mylist WHERE userID = %s",
+        (g.userID,)
+    )[0][0]
     recordApiRequest(g.userID, "getAccount", param1=g.userID)
     return jsonify(
         status=200,
@@ -426,6 +430,9 @@ def getSelfAccount():
                 "code": resp[9] if resp[11] == 1 else "INVITE_IS_DISABLED",
                 "invited": resp[10],
                 "enabled": bool(int(resp[11]))
+            },
+            "mylist": {
+                "id": mylistID
             },
             "apiKey": g.userApiKey
         }

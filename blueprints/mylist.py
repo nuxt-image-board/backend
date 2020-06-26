@@ -137,6 +137,7 @@ def editMylist(mylistID):
         return jsonify(status=400, message="You don't have permission to edit")
     # パラメータ引き出し
     illustID = params.get("illustID", 0)
+    print(illustID)
     action = params.get("action", "add")
     title = params.get("title", "")
     description = params.get("description", "")
@@ -178,7 +179,7 @@ def editMylist(mylistID):
             if not isExist:
                 return jsonify(status=400, message="Already deleted from the list")
             resp = g.db.edit(
-                "DELETE FROM data_mylist WHERE mylistID=%s AND illustID=%s)",
+                "DELETE FROM data_mylist WHERE mylistID=%s AND illustID=%s",
                 (mylistID, illustID)
             )
             if not resp:
@@ -190,6 +191,48 @@ def editMylist(mylistID):
     if not resp:
         return jsonify(status=500, message="Server bombed.")
     return jsonify(status=200, message="update complete")
+
+
+@mylist_api.route('/<int:mylistID>/find', methods=["GET"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def findInMylist(mylistID):
+    ''' マイリスト内に指定されたイラストが含まれているかを調べる '''
+    if g.userPermission not in [0, 9]:
+        return jsonify(status=400, message='Bad request')
+    if not g.db.has("info_mylist", "mylistID=%s", (mylistID,)):
+        return jsonify(status=404, message="The mylist was not exists")
+    targetID = request.args.get('id', default=1, type=int)
+    if g.db.has("data_mylist", "mylistID=%s AND illustID=%s", (mylistID, targetID,)):
+        return jsonify(status=200, message="The illust was found in the list")
+    return jsonify(status=404, message="The illust was not found in the list")
+
+
+@mylist_api.route('/<int:mylistID>/finds', methods=["GET", "POST"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def findsInMylist(mylistID):
+    ''' マイリスト内に指定されたイラストが含まれているかを調べる '''
+    if g.userPermission not in [0, 9]:
+        return jsonify(status=400, message='Bad request')
+    if not g.db.has("info_mylist", "mylistID=%s", (mylistID,)):
+        return jsonify(status=404, message="The mylist was not exists")
+    # マイリストの所有者を確認
+    if not g.db.has(
+        "info_mylist",
+        "(userID=%s AND mylistID=%s) OR (mylistStatus=1 AND mylistID=%s)",
+        (g.userID, mylistID, mylistID)
+    ):
+        return jsonify(status=400, message="You don't have permission")
+    params = request.get_json()
+    if not params:
+        return jsonify(status=400, message="Request parameters are not satisfied.")
+    illustIDs = params.get("ids", [])
+    findResult = {
+        i: g.db.has("data_mylist", "illustID=%s AND mylistID=%s", (i, mylistID))
+        for i in illustIDs
+    }
+    return jsonify(status=200, message="ok", data=findResult)
 
 
 @mylist_api.route('/list', methods=["GET"], strict_slashes=False)
@@ -237,8 +280,8 @@ def listMylist():
                 "id": d[0],
                 "name": d[2],
                 "description": d[3],
-                "createdDate": d[4],
-                "updatedDate": d[5]
+                "createdDate": d[4].strftime('%Y-%m-%d %H:%M:%S'),
+                "updatedDate": d[5].strftime('%Y-%m-%d %H:%M:%S')
             } for d in datas]
         }
     )
