@@ -11,6 +11,7 @@ from .news import news_api
 from .notify import notify_api
 from .invites import invites_api
 from .superuser import superuser_api
+from .mylist import mylist_api
 from .authorizator import auth
 from .limiter import apiLimiter
 from .cache import apiCache
@@ -29,6 +30,7 @@ __all__ = [
     "notify_api",
     "invites_api",
     "superuser_api",
+    "mylist_api",
     "auth",
     "apiLimiter",
     "apiCache"

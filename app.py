@@ -25,6 +25,7 @@ from blueprints import (
     notify_api,
     invites_api,
     superuser_api,
+    mylist_api,
     apiLimiter,
     apiCache
 )
@@ -139,6 +140,7 @@ def createApp():
     app.register_blueprint(notify_api, url_prefix='/notify')
     app.register_blueprint(invites_api, url_prefix='/invites')
     app.register_blueprint(superuser_api, url_prefix='/superuser')
+    app.register_blueprint(mylist_api, url_prefix='/mylist')
     # リクエスト共通処理の登録
     app.before_request(app_before_request)
     app.after_request(app_after_request)
