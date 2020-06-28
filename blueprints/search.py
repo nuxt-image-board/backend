@@ -100,6 +100,22 @@ def searchByTag():
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
+    illustIDs = [i[0] for i in illusts]
+    illustKey = ",".join([str(i) for i in illustIDs])
+    mylistData = {
+        i[0]: i[1]
+        for i in g.db.get(
+            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
+            + "GROUP BY illustID "
+            + f"HAVING illustID IN ({illustKey})"
+        )
+    }
+    mylistKeys = mylistData.keys()
+    mylistDict = {
+        str(i): mylistData[i]
+        if i in mylistKeys else 0
+        for i in illustIDs
+    }
     return jsonify(
         status=200,
         message="found",
@@ -116,6 +132,7 @@ def searchByTag():
                 "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
                 "pages": i[5],
                 "like": i[6],
+                "mylist": mylistDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw": i[9],
@@ -178,6 +195,22 @@ def searchByArtist():
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
+    illustIDs = [i[0] for i in illusts]
+    illustKey = ",".join([str(i) for i in illustIDs])
+    mylistData = {
+        i[0]: i[1]
+        for i in g.db.get(
+            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
+            + "GROUP BY illustID "
+            + f"HAVING illustID IN ({illustKey})"
+        )
+    }
+    mylistKeys = mylistData.keys()
+    mylistDict = {
+        str(i): mylistData[i]
+        if i in mylistKeys else 0
+        for i in illustIDs
+    }
     return jsonify(
         status=200,
         message="found",
@@ -194,6 +227,7 @@ def searchByArtist():
                 "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
                 "pages": i[5],
                 "like": i[6],
+                "mylist": mylistDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw": i[9],
@@ -256,6 +290,22 @@ def searchByCharacter():
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
+    illustIDs = [i[0] for i in illusts]
+    illustKey = ",".join([str(i) for i in illustIDs])
+    mylistData = {
+        i[0]: i[1]
+        for i in g.db.get(
+            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
+            + "GROUP BY illustID "
+            + f"HAVING illustID IN ({illustKey})"
+        )
+    }
+    mylistKeys = mylistData.keys()
+    mylistDict = {
+        str(i): mylistData[i]
+        if i in mylistKeys else 0
+        for i in illustIDs
+    }
     return jsonify(
         status=200,
         message="found",
@@ -272,6 +322,7 @@ def searchByCharacter():
                 "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
                 "pages": i[5],
                 "like": i[6],
+                "mylist": mylistDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw": i[9],
@@ -330,6 +381,22 @@ def searchByKeyword():
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
+    illustIDs = [i[0] for i in illusts]
+    illustKey = ",".join([str(i) for i in illustIDs])
+    mylistData = {
+        i[0]: i[1]
+        for i in g.db.get(
+            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
+            + "GROUP BY illustID "
+            + f"HAVING illustID IN ({illustKey})"
+        )
+    }
+    mylistKeys = mylistData.keys()
+    mylistDict = {
+        str(i): mylistData[i]
+        if i in mylistKeys else 0
+        for i in illustIDs
+    }
     return jsonify(
         status=200,
         message="found",
@@ -346,6 +413,7 @@ def searchByKeyword():
                 "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
                 "pages": i[5],
                 "like": i[6],
+                "mylist": mylistDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw":i[9],
@@ -397,6 +465,22 @@ def searchByAll():
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
+    illustIDs = [i[0] for i in illusts]
+    illustKey = ",".join([str(i) for i in illustIDs])
+    mylistData = {
+        i[0]: i[1]
+        for i in g.db.get(
+            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
+            + "GROUP BY illustID "
+            + f"HAVING illustID IN ({illustKey})"
+        )
+    }
+    mylistKeys = mylistData.keys()
+    mylistDict = {
+        str(i): mylistData[i]
+        if i in mylistKeys else 0
+        for i in illustIDs
+    }
     return jsonify(
         status=200,
         message="found",
@@ -413,6 +497,7 @@ def searchByAll():
                 "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
                 "pages": i[5],
                 "like": i[6],
+                "mylist": mylistDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw": i[9],
