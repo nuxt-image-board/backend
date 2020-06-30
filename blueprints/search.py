@@ -42,6 +42,40 @@ def isNotAllowedFile(filename):
     return False
 
 
+def getMylistCountDict(illustIDs):
+    illustKey = ",".join([str(i) for i in illustIDs])
+    mylistData = {
+        i[0]: i[1]
+        for i in g.db.get(
+            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
+            + "GROUP BY illustID "
+            + f"HAVING illustID IN ({illustKey})"
+        )
+    }
+    mylistDict = {
+        str(i): mylistData[i]
+        if i in mylistData else 0
+        for i in illustIDs
+    }
+    return mylistDict
+
+
+def getMylistedDict(illustIDs):
+    illustKey = ",".join([str(i) for i in illustIDs])
+    mylistedData = g.db.get(
+        "SELECT illustID FROM data_mylist "
+        + "WHERE mylistID IN "
+        + f"(SELECT mylistID FROM info_mylist WHERE userID={g.userID}) "
+        + f"AND illustID IN ({illustKey})"
+    )
+    mylistedData = [i[0] for i in mylistedData]
+    mylistedDict = {
+        str(i): True if i in mylistedData else False
+        for i in illustIDs
+    }
+    return mylistedDict
+
+
 search_api = Blueprint('search_api', __name__)
 
 #
@@ -101,21 +135,10 @@ def searchByTag():
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
     illustIDs = [i[0] for i in illusts]
-    illustKey = ",".join([str(i) for i in illustIDs])
-    mylistData = {
-        i[0]: i[1]
-        for i in g.db.get(
-            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
-            + "GROUP BY illustID "
-            + f"HAVING illustID IN ({illustKey})"
-        )
-    }
-    mylistKeys = mylistData.keys()
-    mylistDict = {
-        str(i): mylistData[i]
-        if i in mylistKeys else 0
-        for i in illustIDs
-    }
+    # マイリストされた回数を気合で取ってくる
+    mylistDict = getMylistCountDict(illustIDs)
+    # 自分がマイリストしたかどうかを気合で取ってくる
+    mylistedDict = getMylistedDict(illustIDs)
     return jsonify(
         status=200,
         message="found",
@@ -133,6 +156,7 @@ def searchByTag():
                 "pages": i[5],
                 "like": i[6],
                 "mylist": mylistDict[str(i[0])],
+                "mylisted": mylistedDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw": i[9],
@@ -196,21 +220,10 @@ def searchByArtist():
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
     illustIDs = [i[0] for i in illusts]
-    illustKey = ",".join([str(i) for i in illustIDs])
-    mylistData = {
-        i[0]: i[1]
-        for i in g.db.get(
-            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
-            + "GROUP BY illustID "
-            + f"HAVING illustID IN ({illustKey})"
-        )
-    }
-    mylistKeys = mylistData.keys()
-    mylistDict = {
-        str(i): mylistData[i]
-        if i in mylistKeys else 0
-        for i in illustIDs
-    }
+    # マイリストされた回数を気合で取ってくる
+    mylistDict = getMylistCountDict(illustIDs)
+    # 自分がマイリストしたかどうかを気合で取ってくる
+    mylistedDict = getMylistedDict(illustIDs)
     return jsonify(
         status=200,
         message="found",
@@ -228,6 +241,7 @@ def searchByArtist():
                 "pages": i[5],
                 "like": i[6],
                 "mylist": mylistDict[str(i[0])],
+                "mylisted": mylistedDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw": i[9],
@@ -291,21 +305,10 @@ def searchByCharacter():
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
     illustIDs = [i[0] for i in illusts]
-    illustKey = ",".join([str(i) for i in illustIDs])
-    mylistData = {
-        i[0]: i[1]
-        for i in g.db.get(
-            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
-            + "GROUP BY illustID "
-            + f"HAVING illustID IN ({illustKey})"
-        )
-    }
-    mylistKeys = mylistData.keys()
-    mylistDict = {
-        str(i): mylistData[i]
-        if i in mylistKeys else 0
-        for i in illustIDs
-    }
+    # マイリストされた回数を気合で取ってくる
+    mylistDict = getMylistCountDict(illustIDs)
+    # 自分がマイリストしたかどうかを気合で取ってくる
+    mylistedDict = getMylistedDict(illustIDs)
     return jsonify(
         status=200,
         message="found",
@@ -323,6 +326,7 @@ def searchByCharacter():
                 "pages": i[5],
                 "like": i[6],
                 "mylist": mylistDict[str(i[0])],
+                "mylisted": mylistedDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw": i[9],
@@ -382,21 +386,10 @@ def searchByKeyword():
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
     illustIDs = [i[0] for i in illusts]
-    illustKey = ",".join([str(i) for i in illustIDs])
-    mylistData = {
-        i[0]: i[1]
-        for i in g.db.get(
-            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
-            + "GROUP BY illustID "
-            + f"HAVING illustID IN ({illustKey})"
-        )
-    }
-    mylistKeys = mylistData.keys()
-    mylistDict = {
-        str(i): mylistData[i]
-        if i in mylistKeys else 0
-        for i in illustIDs
-    }
+    # マイリストされた回数を気合で取ってくる
+    mylistDict = getMylistCountDict(illustIDs)
+    # 自分がマイリストしたかどうかを気合で取ってくる
+    mylistedDict = getMylistedDict(illustIDs)
     return jsonify(
         status=200,
         message="found",
@@ -414,6 +407,7 @@ def searchByKeyword():
                 "pages": i[5],
                 "like": i[6],
                 "mylist": mylistDict[str(i[0])],
+                "mylisted": mylistedDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw":i[9],
@@ -466,21 +460,10 @@ def searchByAll():
     if not len(illusts):
         return jsonify(status=404, message="No matched illusts.")
     illustIDs = [i[0] for i in illusts]
-    illustKey = ",".join([str(i) for i in illustIDs])
-    mylistData = {
-        i[0]: i[1]
-        for i in g.db.get(
-            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
-            + "GROUP BY illustID "
-            + f"HAVING illustID IN ({illustKey})"
-        )
-    }
-    mylistKeys = mylistData.keys()
-    mylistDict = {
-        str(i): mylistData[i]
-        if i in mylistKeys else 0
-        for i in illustIDs
-    }
+    # マイリストされた回数を気合で取ってくる
+    mylistDict = getMylistCountDict(illustIDs)
+    # 自分がマイリストしたかどうかを気合で取ってくる
+    mylistedDict = getMylistedDict(illustIDs)
     return jsonify(
         status=200,
         message="found",
@@ -498,6 +481,7 @@ def searchByAll():
                 "pages": i[5],
                 "like": i[6],
                 "mylist": mylistDict[str(i[0])],
+                "mylisted": mylistedDict[str(i[0])],
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw": i[9],
@@ -572,6 +556,9 @@ def searchByRandom():
         )
     if not illusts:
         return jsonify(404, message="No matched arts.")
+    illustIDs = [i[0] for i in illusts]
+    # マイリストされた回数を気合で取ってくる
+    mylistDict = getMylistCountDict(illustIDs)
     return jsonify(
         status=200,
         message="found",
@@ -584,6 +571,7 @@ def searchByRandom():
                 "date": illust[4],
                 "pages": illust[5],
                 "like": illust[6],
+                "mylist": mylistDict[str(illust[0])],
                 "originUrl": illust[7],
                 "originService": illust[8],
                 "nsfw": illust[9],
@@ -660,6 +648,11 @@ def searchByImage():
             (hash,)
         )
         if len(illusts):
+            illustIDs = [i[0] for i in illusts]
+            # マイリストされた回数を気合で取ってくる
+            mylistDict = getMylistCountDict(illustIDs)
+            # 自分がマイリストしたかどうかを気合で取ってくる
+            mylistedDict = getMylistedDict(illustIDs)
             illusts = [{
                 "illustID": i[0],
                 "artistID": i[1],
@@ -669,6 +662,8 @@ def searchByImage():
                 "date": i[5].strftime('%Y-%m-%d %H:%M:%S'),
                 "pages": i[6],
                 "like": i[7],
+                "mylist": mylistDict[str(i[0])],
+                "mylisted": mylistedDict[str(i[0])],
                 "originUrl": i[8],
                 "originService": i[9],
                 "nsfw": i[10],
