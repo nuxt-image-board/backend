@@ -83,7 +83,7 @@ def getMylist(mylistID):
     pageID = request.args.get('page', default=1, type=int)
     if pageID > 100:
         pageID = 100
-    per_page = request.args.get('count', default=8, type=int)
+    per_page = request.args.get('count', default=20, type=int)
     if per_page > 100:
         per_page = 100
     mylistName = g.db.get(

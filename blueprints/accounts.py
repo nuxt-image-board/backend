@@ -132,9 +132,16 @@ def createAccount():
         return jsonify(status=500, message="Server bombed.")
     # APIキーを作る
     apiKey = generateApiKey(userID)
+    # マイリストを作る
+    resp = g.db.edit(
+        "INSERT INTO info_mylist (mylistName, mylistDescription, userID) "
+        + "VALUES (%s,%s,%s)",
+        (username+"のマイリスト", "", userID)
+    )
     # 記録する
     recordApiRequest(g.userID, "createAccount", param1=userID)
     recordApiRequest(g.userID, "generateApiKey", param1=userID)
+    recordApiRequest(g.userID, "createMylist", param1=userID)
     return jsonify(
         status=201,
         message="created",
@@ -224,7 +231,6 @@ def loginAccountWithLine():
     }
     lineResp = requests.post(
         LINE_ENDPOINT, headers=headers, data=params).json()
-    print(lineResp)
     if 'error' in lineResp:
         return jsonify(status=401, message="line authorization failed")
     lineIDToken = lineResp["id_token"]
