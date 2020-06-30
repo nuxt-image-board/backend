@@ -6,6 +6,24 @@ from .recorder import recordApiRequest
 mylist_api = Blueprint('mylist_api', __name__)
 
 
+def getMylistCountDict(illustIDs):
+    illustKey = ",".join([str(i) for i in illustIDs])
+    mylistData = {
+        i[0]: i[1]
+        for i in g.db.get(
+            "SELECT illustID, COUNT(mylistID) FROM data_mylist "
+            + "GROUP BY illustID "
+            + f"HAVING illustID IN ({illustKey})"
+        )
+    }
+    mylistDict = {
+        str(i): mylistData[i]
+        if i in mylistData else 0
+        for i in illustIDs
+    }
+    return mylistDict
+
+
 @mylist_api.route('/', methods=["POST"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
@@ -53,10 +71,19 @@ def getMylist(mylistID):
         (g.userID, mylistID, mylistID)
     ):
         return jsonify(status=400, message="You don't have permission")
+    sortMethod = request.args.get('sort', default="d", type=str)
+    if sortMethod == "d":
+        sortMethod = "mylistAddedDate"
+    elif sortMethod == "i":
+        sortMethod = "illustID"
+    else:
+        sortMethod = "illustLike"
+    order = request.args.get('order', default="d", type=str)
+    order = "DESC" if order == "d" else "ASC"
     pageID = request.args.get('page', default=1, type=int)
     if pageID > 100:
         pageID = 100
-    per_page = request.args.get('count', default=20, type=int)
+    per_page = request.args.get('count', default=8, type=int)
     if per_page > 100:
         per_page = 100
     mylistName = g.db.get(
@@ -65,24 +92,30 @@ def getMylist(mylistID):
     )[0][0]
     illustCount = g.db.get(
         "SELECT COUNT(illustID) FROM data_mylist WHERE mylistID=%s",
-        (g.userID,)
+        (mylistID,)
     )[0][0]
     pages, extra_page = divmod(illustCount, per_page)
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-        "SELECT illustID, data_illust.artistID, illustName, "
+        "SELECT DISTINCT data_illust.illustID, data_illust.artistID, illustName, "
         + "illustDescription, illustDate, illustPage, illustLike, "
         + "illustOriginUrl, illustOriginSite, illustNsfw, artistName, "
-        + "illustExtension FROM data_illust "
+        + "illustExtension, mylistAddedDate FROM data_illust "
         + "INNER JOIN info_artist ON "
         + "data_illust.artistID = info_artist.artistID "
-        + "WHERE illustID IN "
+        + "INNER JOIN data_mylist ON data_illust.illustID = data_mylist.illustID "
+        + "WHERE data_illust.illustID IN "
         + "( SELECT illustID FROM data_mylist WHERE mylistID = %s) "
-        + "ORDER BY illustID DESC "
+        + f"ORDER BY {sortMethod} {order} "
         + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
-        (mylistID,)
+        (mylistID, )
     )
+    if not len(illusts):
+        return jsonify(status=404, message="No matched illusts.")
+    illustIDs = [i[0] for i in illusts]
+    # マイリストされた回数を気合で取ってくる
+    mylistDict = getMylistCountDict(illustIDs)
     recordApiRequest(
         g.userID,
         "getMylist",
@@ -105,6 +138,8 @@ def getMylist(mylistID):
                 "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
                 "pages": i[5],
                 "like": i[6],
+                "mylist": mylistDict[str(i[0])],
+                "mylisted": True,
                 "originUrl": i[7],
                 "originService": i[8],
                 "nsfw": i[9],
@@ -137,7 +172,6 @@ def editMylist(mylistID):
         return jsonify(status=400, message="You don't have permission to edit")
     # パラメータ引き出し
     illustID = params.get("illustID", 0)
-    print(illustID)
     action = params.get("action", "add")
     title = params.get("title", "")
     description = params.get("description", "")
