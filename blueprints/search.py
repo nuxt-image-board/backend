@@ -123,10 +123,12 @@ def searchByTag():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName, illustExtension "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,"
+        + "illustExtension,illustStatus "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
         + "WHERE illustID IN "
         + "(SELECT illustID FROM data_tag WHERE tagID=%s) "
+        + "AND illustStatus=0 "
         + "ORDER BY %s %s " % (sortMethod, order)
         + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1)),
         (tagID,)
@@ -209,9 +211,11 @@ def searchByArtist():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,illustExtension "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,"
+        + "illustExtension,illustStatus "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
         + "WHERE data_illust.artistID = %s "
+        + "AND illustStatus=0 "
         + "ORDER BY %s %s " % (sortMethod, order)
         + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1)),
         (artistID,)
@@ -293,10 +297,12 @@ def searchByCharacter():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,illustExtension "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,"
+        + "illustExtension,illustStatus "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
         + "WHERE illustID IN "
         + "(SELECT illustID FROM data_tag WHERE tagID=%s) "
+        + "AND illustStatus = 0 "
         + "ORDER BY %s %s " % (sortMethod, order)
         + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1)),
         (charaID,)
@@ -375,9 +381,11 @@ def searchByKeyword():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,illustExtension "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,"
+        + "illustExtension,illustStatus "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
-        + "WHERE illustName LIKE %s"
+        + "WHERE illustName LIKE %s "
+        + "AND illustStatus=0 "
         + "ORDER BY %s %s " % (sortMethod, order)
         + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1)),
         ("%"+keyword+"%",)
@@ -451,8 +459,10 @@ def searchByAll():
     illusts = g.db.get(
         "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
         + "illustDate,illustPage,illustLike,"
-        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,illustExtension "
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,"
+        + "illustExtension,illustStatus "
         + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
+        + "WHERE illustStatus=0 "
         + "ORDER BY %s %s " % (sortMethod, order)
         + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1))
     )
@@ -519,10 +529,12 @@ def searchByRandom():
             "SELECT illustID, data_illust.artistID,"
             + " illustName, illustDescription,"
             + " illustDate, illustPage, illustLike, illustOriginUrl,"
-            + " illustOriginSite, illustNsfw, artistName,illustExtension"
+            + " illustOriginSite, illustNsfw, artistName,"
+            + " illustExtension,illustStatus"
             + " FROM `data_illust` INNER JOIN info_artist"
             + " ON info_artist.artistID = data_illust.artistID"
-            + f" WHERE illustNsfw={acceptNsfw} ORDER BY RAND() LIMIT {count}"
+            + f" WHERE illustNsfw={acceptNsfw} AND illustStatus=0"
+            + f" ORDER BY RAND() LIMIT {count}"
         )
     # 作者指定ランダム
     elif artistID:
@@ -530,11 +542,13 @@ def searchByRandom():
             "SELECT illustID, data_illust.artistID,"
             + " illustName, illustDescription,"
             + " illustDate, illustPage, illustLike, illustOriginUrl,"
-            + " illustOriginSite, illustNsfw, artistName,illustExtension"
+            + " illustOriginSite, illustNsfw, artistName,"
+            + " illustExtension, illustStatus"
             + " FROM `data_illust` INNER JOIN info_artist"
             + " ON info_artist.artistID = data_illust.artistID"
             + f" WHERE illustNsfw={acceptNsfw}"
             + f" AND data_illust.artistID={artistID}"
+            + " AND illustStatus=0"
             + f" ORDER BY RAND() LIMIT {count}"
         )
     # タグ指定ランダム
@@ -547,11 +561,13 @@ def searchByRandom():
             "SELECT illustID, data_illust.artistID,"
             + " illustName, illustDescription,"
             + " illustDate, illustPage, illustLike, illustOriginUrl,"
-            + " illustOriginSite, illustNsfw, artistName,illustExtension"
+            + " illustOriginSite, illustNsfw, artistName,"
+            + " illustExtension, illustStatus "
             + " FROM `data_illust` INNER JOIN info_artist"
             + " ON info_artist.artistID = data_illust.artistID"
             + " WHERE illustID IN"
             + f" (SELECT illustID FROM data_tag WHERE tagID={tagID})"
+            + " AND illustStatus=0"
             + f" AND illustNsfw={acceptNsfw} ORDER BY RAND() LIMIT {count}"
         )
     if not illusts:
@@ -644,7 +660,13 @@ def searchByImage():
         hash = int(str(imagehash.phash(Image.open(tempPath))), 16)
         # 検索SQL
         illusts = g.db.get(
-            "SELECT illustID, data_illust.artistID, BIT_COUNT(illustHash ^ %s) AS SAME, illustName, illustDescription, illustDate, illustPage, illustLike, illustOriginUrl, illustOriginSite, illustNsfw, artistName, illustExtension FROM `data_illust` INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID HAVING SAME < 5 ORDER BY SAME DESC LIMIT 10",
+            "SELECT illustID, data_illust.artistID, BIT_COUNT(illustHash ^ %s) AS SAME, "
+            + "illustName, illustDescription, illustDate, illustPage, illustLike, "
+            + "illustOriginUrl, illustOriginSite, illustNsfw, artistName,"
+            + "illustExtension,illustStatus "
+            + "FROM `data_illust` "
+            + "INNER JOIN info_artist ON info_artist.artistID = data_illust.artistID "
+            + "HAVING SAME < 5 AND illustStatus=0 ORDER BY SAME DESC LIMIT 10",
             (hash,)
         )
         if len(illusts):

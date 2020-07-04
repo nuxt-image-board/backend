@@ -614,24 +614,3 @@ def editAccount(accountID):
             param3=params[p]
         )
     return jsonify(status=200, message="Update complete")
-
-
-@accounts_api.route('/<int:accountID>/favorites', methods=["GET"])
-@auth.login_required
-@apiLimiter.limit(handleApiPermission)
-def getAccountFavorites():
-    return "Not implemeted"
-
-
-@accounts_api.route('/<int:accountID>/favorites', methods=["PUT"])
-@auth.login_required
-@apiLimiter.limit(handleApiPermission)
-def editAccountFavorites():
-    return "Not implemeted"
-
-
-@accounts_api.route('/<int:accountID>/favorites', methods=["DELETE"])
-@auth.login_required
-@apiLimiter.limit(handleApiPermission)
-def deleteAccountFavorites():
-    return "Not implemeted"
