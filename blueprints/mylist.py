@@ -98,15 +98,14 @@ def getMylist(mylistID):
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-        "SELECT DISTINCT data_illust.illustID, data_illust.artistID, illustName, "
+        "SELECT data_illust.illustID, data_illust.artistID, illustName, "
         + "illustDescription, illustDate, illustPage, illustLike, "
         + "illustOriginUrl, illustOriginSite, illustNsfw, artistName, "
-        + "illustExtension, mylistAddedDate FROM data_illust "
+        + "illustExtension, mylistAddedDate, mylistID FROM data_illust "
         + "INNER JOIN info_artist ON "
         + "data_illust.artistID = info_artist.artistID "
         + "INNER JOIN data_mylist ON data_illust.illustID = data_mylist.illustID "
-        + "WHERE data_illust.illustID IN "
-        + "( SELECT illustID FROM data_mylist WHERE mylistID = %s) "
+        + "WHERE mylistID=%s "
         + f"ORDER BY {sortMethod} {order} "
         + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
         (mylistID, )
