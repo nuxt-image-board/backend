@@ -12,7 +12,7 @@ invites_api = Blueprint('invites_api', __name__)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def createInvite():
-    if g.permisssion not in [0, 9]:
+    if g.userPermission not in [0, 9]:
         return jsonify(status=400, message="Bad request")
     if g.db.has(
         "data_invite",
