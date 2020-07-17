@@ -112,7 +112,7 @@ def listTags():
     order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     tagCount = g.db.get(
-        "SELECT COUNT(DISTINCT tagID) FROM data_tag NATURAL JOIN info_tag WHERE tagType = 0"
+        "SELECT COUNT(DISTINCT tagID) FROM data_tag NATURAL JOIN info_tag"
     )[0][0]
     pages, extra_page = divmod(tagCount, per_page)
     if extra_page > 0:
@@ -124,7 +124,7 @@ def listTags():
         + " GROUP BY tagID) AS T1 NATURAL JOIN"
         + " ( SELECT tagID, SUM(illustLike) AS LIKES FROM data_illust"
         + " NATURAL JOIN data_tag GROUP BY tagID ) AS T2"
-        + f" WHERE tagType=0  AND tagName LIKE %s ORDER BY {sortMethod} {order}"
+        + f" WHERE tagName LIKE %s ORDER BY {sortMethod} {order}"
         + f" LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
         (f'%{keyword}%', )
     )
@@ -144,7 +144,7 @@ def listTags():
                 "name": d[1],
                 "description": d[2],
                 "nsfw": d[3],
-                "endpoint": "https://***REMOVED***",
+                "endpoint": None,
                 "count": d[4],
                 "lcount": int(d[5])
             } for d in datas]
