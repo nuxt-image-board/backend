@@ -48,6 +48,8 @@ NOTIFY_CHANNEL_SECRET = "***REMOVED***"
 NOTIFY_ENDPOINT = "https://notify-bot.line.me/oauth/token"
 NOTIFY_REDIRECT_URI_CONNECT = "https://***REMOVED***/line_notify_connect"
 
+TOYMONEY_ENDPOINT = "http://127.0.0.1:7070"
+
 
 def generateApiKey(accountID):
     apiSeq, apiPermission = g.db.get(
@@ -104,10 +106,21 @@ def createAccount():
     password = g.validate(params["password"], lengthMin=5, lengthMax=50)
     password = "***REMOVED***"+password
     password = hashlib.sha256(password.encode("utf8")).hexdigest()
+    # ToyMoneyServerにリクエストする
+    toyApiResp = requests.post(
+        TOYMONEY_ENDPOINT + "/users/create",
+        json={"name": displayID, "password": "***REMOVED***{displayID}"}
+    )
+    if toyApiResp.status_code != 200:
+        print("TOYAPIの応答が正しくない！")
+        return jsonify(status=500, message="Server bombed.")
+    toyApiKey = toyApiResp.json()["apiKey"]
     # 新規アカウント作成
     resp = g.db.edit(
-        "INSERT INTO `data_user`(`userDisplayID`, `userName`,`userPassword`) VALUES (%s,%s,%s)",
-        (displayID, username, password)
+        "INSERT INTO `data_user`"
+        + "(`userDisplayID`, `userName`,`userPassword`,`userToyApiKey`)"
+        + " VALUES (%s,%s,%s,%s)",
+        (displayID, username, password, toyApiKey)
     )
     if not resp:
         print("ユーザーを作成できない！")
@@ -130,7 +143,7 @@ def createAccount():
     if not resp:
         print("招待コードを利用済みにできない！")
         return jsonify(status=500, message="Server bombed.")
-    # APIキーを作る
+    # APIキーを作る(INSERT/UPDATEも一緒にやってる)
     apiKey = generateApiKey(userID)
     # マイリストを作る
     resp = g.db.edit(

@@ -12,6 +12,7 @@ from .notify import notify_api
 from .invites import invites_api
 from .superuser import superuser_api
 from .mylist import mylist_api
+from .toymoney import toymoney_api
 from .authorizator import auth
 from .limiter import apiLimiter
 from .cache import apiCache
@@ -31,6 +32,7 @@ __all__ = [
     "invites_api",
     "superuser_api",
     "mylist_api",
+    "toymoney_api",
     "auth",
     "apiLimiter",
     "apiCache"

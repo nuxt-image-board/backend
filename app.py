@@ -26,6 +26,7 @@ from blueprints import (
     invites_api,
     superuser_api,
     mylist_api,
+    toymoney_api,
     apiLimiter,
     apiCache
 )
@@ -141,6 +142,7 @@ def createApp():
     app.register_blueprint(invites_api, url_prefix='/invites')
     app.register_blueprint(superuser_api, url_prefix='/superuser')
     app.register_blueprint(mylist_api, url_prefix='/mylist')
+    app.register_blueprint(toymoney_api, url_prefix='/toymoney')
     # リクエスト共通処理の登録
     app.before_request(app_before_request)
     app.after_request(app_after_request)
