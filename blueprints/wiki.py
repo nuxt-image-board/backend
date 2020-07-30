@@ -26,7 +26,6 @@ def addArticle():
                 status=400,
                 message="Request parameters are not satisfied."
             )
-    params = {p: g.validate(params[p]) for p in params.keys()}
     targetType = int(params.get('targetType'))
     if targetType > 2:
         return jsonify(status=400, message="Invalid targetType")
@@ -39,7 +38,7 @@ def addArticle():
         1: ["info_tag", "tagID", "tag"],
         2: ["info_artist", "artistID", "artist"]
     }
-    find = findDict[targetID]
+    find = findDict[targetType]
     if not g.db.has(find[0], f"{find[1]}=%s", (targetID,)):
         return jsonify(
             status=404,
@@ -70,7 +69,7 @@ def addArticle():
         "INSERT INTO data_wiki"
         + " (articleTitle, articleBody, targetType,"
         + " targetID, userID, revision)"
-        + " VALUES (%s,%s,%s,%s)",
+        + " VALUES (%s,%s,%s,%s,%s,%s)",
         (title, body, targetType, targetID, g.userID, revision)
     )
     if resp:
@@ -109,7 +108,7 @@ def removeArticle(articleID):
 def getArticle(articleID):
     articleData = g.db.get(
         "SELECT articleID, articleTitle, articleBody,"
-        + " targetType, targetID, revision, userID,"
+        + " targetType, targetID, revision, createdTime, userID,"
         + " userName FROM data_wiki"
         + " NATURAL JOIN data_user WHERE articleID = %s",
         (articleID,)
@@ -128,9 +127,10 @@ def getArticle(articleID):
                 "id": articleData[4],
             },
             "revision": articleData[5],
+            "date": articleData[6].strftime('%Y-%m-%d %H:%M:%S'),
             "user": {
-                "id": articleData[6],
-                "name": articleData[7]
+                "id": articleData[7],
+                "name": articleData[8]
             }
         }
     )
@@ -150,7 +150,7 @@ def findArticle():
         param2=targetID
     )
     resp = g.db.get(
-        "SELECT articleID FROM data_wiki WHERE targetType=%s AND targetID=%s"
+        "SELECT articleID,revision FROM data_wiki WHERE targetType=%s AND targetID=%s"
         + " ORDER BY revision DESC LIMIT 1",
         (targetType, targetID,)
     )
@@ -158,7 +158,8 @@ def findArticle():
         return jsonify(
             status=200,
             message="The article was found.",
-            articleID=resp[0][0]
+            articleID=resp[0][0],
+            revision=resp[0][1]
         )
     else:
         return jsonify(status=404, message="The article was not found")

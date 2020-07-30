@@ -13,6 +13,7 @@ from .invites import invites_api
 from .superuser import superuser_api
 from .mylist import mylist_api
 from .toymoney import toymoney_api
+from .wiki import wiki_api
 from .authorizator import auth
 from .limiter import apiLimiter
 from .cache import apiCache
@@ -33,6 +34,7 @@ __all__ = [
     "superuser_api",
     "mylist_api",
     "toymoney_api",
+    "wiki_api",
     "auth",
     "apiLimiter",
     "apiCache"
