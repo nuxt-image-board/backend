@@ -257,6 +257,92 @@ def searchByArtist():
         })
 
 
+@search_api.route("/uploader", methods=["GET"])
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7, query_string=True)
+def searchByUploader():
+    '''
+    REQ
+     artistID=1,
+     sort=d/l,
+     order=d/a,
+     page=1
+    '''
+    per_page = 20
+    pageID = request.args.get('page', default=1, type=int)
+    if pageID < 1:
+        pageID = 1
+    uploaderID = request.args.get('id', default=None, type=int)
+    if not uploaderID:
+        return jsonify(status=400, message="uploaderID is required.")
+    sortMethod = request.args.get('sort', default="d", type=str)
+    sortMethod = "illustDate" if sortMethod == "d" else "illustLike"
+    order = request.args.get('order', default="d", type=str)
+    order = "DESC" if order == "d" else "ASC"
+    illustCount = g.db.get(
+        "SELECT COUNT(illustID) FROM data_illust WHERE userID = %s",
+        (uploaderID,)
+    )
+    illustCount = illustCount[0][0]
+    if illustCount == 0:
+        return jsonify(status=404, message="No matched illusts.")
+    uploaderName = g.db.get(
+        "SELECT userName FROM data_user WHERE userID = %s",
+        (uploaderID,)
+    )[0][0]
+    pages, extra_page = divmod(illustCount, per_page)
+    if extra_page > 0:
+        pages += 1
+    illusts = g.db.get(
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
+        + "illustDate,illustPage,illustLike,"
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,"
+        + "illustExtension,illustStatus "
+        + "FROM data_illust INNER JOIN info_artist ON data_illust.artistID = info_artist.artistID "
+        + "WHERE data_illust.userID = %s "
+        + "AND illustStatus=0 "
+        + "ORDER BY %s %s " % (sortMethod, order)
+        + "LIMIT %s OFFSET %s" % (per_page, per_page*(pageID-1)),
+        (uploaderID,)
+    )
+    # ないとページ番号が不正なときに爆発する
+    if not len(illusts):
+        return jsonify(status=404, message="No matched illusts.")
+    illustIDs = [i[0] for i in illusts]
+    # マイリストされた回数を気合で取ってくる
+    mylistDict = getMylistCountDict(illustIDs)
+    # 自分がマイリストしたかどうかを気合で取ってくる
+    mylistedDict = getMylistedDict(illustIDs)
+    return jsonify(
+        status=200,
+        message="found",
+        data={
+            "title": uploaderName,
+            "count": illustCount,
+            "current": pageID,
+            "pages": pages,
+            "imgs": [{
+                "illustID": i[0],
+                "artistID": i[1],
+                "title": i[2],
+                "caption": i[3],
+                "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
+                "pages": i[5],
+                "like": i[6],
+                "mylist": mylistDict[str(i[0])],
+                "mylisted": mylistedDict[str(i[0])],
+                "originUrl": i[7],
+                "originService": i[8],
+                "nsfw": i[9],
+                "artist": {
+                    "name": i[10]
+                },
+                "extension": i[11]
+            } for i in illusts]
+        })
+
+
 @search_api.route("/character", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
