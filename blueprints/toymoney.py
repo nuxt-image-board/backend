@@ -16,13 +16,14 @@ TOYMONEY_ENDPOINT = "http://127.0.0.1:7070"
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 def torimochi(text):
-    print(g.userID)
+    # 別サービスで使う認証トークンをDBから取ってくる
     toyApiKey = g.db.get(
         "SELECT userToyApiKey FROM data_user WHERE userID=%s",
         (g.userID,)
     )[0][0]
     headers = {"Authorization": f"Bearer {toyApiKey}"}
     path = request.path.replace("toymoney/", "")
+    # GET/POST/PUT リクエストの内容をlocalhostで動く別サービスにリクエストする
     if request.method == "GET":
         resp = requests.get(
             TOYMONEY_ENDPOINT + path
@@ -43,4 +44,5 @@ def torimochi(text):
                 json=data,
                 headers=headers
             )
+    # 別サービスの応答を応答として返す
     return (resp.text, resp.status_code, resp.headers.items())
