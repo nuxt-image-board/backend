@@ -219,3 +219,68 @@ def listCharacters():
             } for d in datas]
         }
     )
+
+
+@catalog_api.route('/uploaders', methods=["GET"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7, query_string=True)
+def listUploaders():
+    '''
+    REQ
+     sort=c(ount)/d(ate)/l(ikes)/n(ame)
+     order=d(esc)/a(sc)
+     page=1
+     keyword=''
+    '''
+    per_page = 20
+    pageID = request.args.get('page', default=1, type=int)
+    keyword = request.args.get('keyword', default='', type=str)
+    if pageID < 1:
+        pageID = 1
+    sortDict = {
+        "d": "LAST_UPDATE",
+        "l": "LIKES",
+        "c": "CNT",
+        "n": "userName"
+    }
+    sortMethod = request.args.get('sort', default="c", type=str)
+    sortMethod = sortDict[sortMethod] if sortMethod in sortDict.keys() else "CNT"
+    order = request.args.get('order', default="d", type=str)
+    order = "DESC" if order == "d" else "ASC"
+    uploaderCount = g.db.get(
+        "SELECT COUNT(DISTINCT userID) FROM data_illust"
+    )[0][0]
+    pages, extra_page = divmod(uploaderCount, per_page)
+    if extra_page > 0:
+        pages += 1
+    datas = g.db.get(
+        "SELECT userID,userName, CNT,LIKES,LAST_UPDATE "
+        + "FROM data_user NATURAL JOIN ( SELECT userID,COUNT(userID) AS CNT, "
+        + "SUM(illustLike) AS LIKES, "
+        + "MAX(illustID) AS LAST_UPDATE "
+        + "FROM data_illust GROUP BY userID ) AS T1 "
+        + "WHERE userName LIKE %s"
+        + f"ORDER BY {sortMethod} {order} "
+        + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        (f'%{keyword}%',)
+    )
+    # ないとページ番号が不正なときに爆発する
+    if not len(datas):
+        return jsonify(status=404, message="No matched uploaders.")
+    return jsonify(
+        status=200,
+        message="found",
+        data={
+            "title": "投稿者",
+            "count": uploaderCount,
+            "current": pageID,
+            "pages": pages,
+            "contents": [{
+                "id": d[0],
+                "name": d[1],
+                "count": d[2],
+                "lcount": int(d[3])
+            } for d in datas]
+        }
+    )
