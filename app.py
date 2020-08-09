@@ -162,7 +162,7 @@ def createApp():
     CORS(
         app,
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        origins=["http://localhost:3001", "https://***REMOVED***", "https://***REMOVED***"],
+        origins=["http://localhost:3000", "https://***REMOVED***", "https://***REMOVED***"],
         max_age=604800
     )
     return app
