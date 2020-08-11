@@ -80,7 +80,7 @@ def removeMute():
         return jsonify(status=400, message="the mute was not found")
     resp = g.db.edit(
         "DELETE FROM data_mute"
-        + " WHERE targetType=%s AND targetID=%s AND userID=%s)",
+        + " WHERE targetType=%s AND targetID=%s AND userID=%s",
         (muteTargetType, muteTargetId, g.userID)
     )
     if not resp:
