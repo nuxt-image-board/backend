@@ -257,7 +257,7 @@ def searchByArtist():
         })
 
 
-@search_api.route("/uploader", methods=["GET"])
+@search_api.route("/uploaders", methods=["GET"])
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
 @apiCache.cached(timeout=7, query_string=True)

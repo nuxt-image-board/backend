@@ -15,6 +15,7 @@ from .mylist import mylist_api
 from .toymoney import toymoney_api
 from .wiki import wiki_api
 from .mute import mute_api
+from .uploaders import uploaders_api
 from .authorizator import auth
 from .limiter import apiLimiter
 from .cache import apiCache
@@ -37,6 +38,7 @@ __all__ = [
     "toymoney_api",
     "wiki_api",
     "mute_api",
+    "uploaders_api",
     "auth",
     "apiLimiter",
     "apiCache"
