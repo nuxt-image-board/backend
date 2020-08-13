@@ -37,3 +37,13 @@ def nav_tag():
     datas = g.db.get("SELECT tagName, data_tag.tagID, COUNT(data_tag.tagID) AS CNT FROM data_tag INNER JOIN info_tag ON info_tag.tagID = data_tag.tagID WHERE tagType = 0 GROUP BY data_tag.tagID ORDER BY CNT DESC LIMIT 5")
     ls = [{"name": d[0], "id":d[1], "count":d[2]} for d in datas]
     return jsonify(status=200, data=ls)
+
+
+@navigations_api.route("/uploaders", methods=["GET"])
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=300)
+def nav_uploader():
+    datas = g.db.get("SELECT userName, data_user.userID, COUNT(data_user.userID) AS CNT FROM data_user INNER JOIN data_illust ON data_user.userID = data_illust.userID GROUP BY data_user.userID ORDER BY CNT DESC LIMIT 5")
+    ls = [{"name": d[0], "id":d[1], "count":d[2]} for d in datas]
+    return jsonify(status=200, data=ls)
