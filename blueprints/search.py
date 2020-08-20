@@ -791,3 +791,119 @@ def searchByImage():
                 'illusts': illusts
             }
         )
+
+#
+# 高度な検索(複数タグ等)
+#
+
+# 複数条件での検索処理
+# 1. まずキーワードからタグ一覧を取ってくる(tags/find から取ってくる)
+# 2. タグ一覧を tagIdsとして渡して 応答に返ってくるイラストIDを取得する
+# (TODO:search系列と同様の動作をするように修正)
+
+# OR検索の例
+# SELECT illustID,tagID FROM `data_tag` WHERE tagID IN (1,2,3)
+#
+# AND検索の例
+#  SELECT illustID,tagID FROM `data_tag` GROUP BY illustID
+#  HAVING SUM(tagID='1') AND SUM(tagID='2')
+# または
+#  SELECT illustID FROM テーブル WHERE tagID=? AND illustID
+#  IN (それまでに取得したillustIDリスト)
+#  を forで回せばいい
+
+
+@search_api.route("/multiple/tag", methods=["GET"])
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=7, query_string=True)
+def searchByMultipleTag():
+    '''
+    REQ
+     tagID=1,2,3,4
+     sort=d/l
+     order=d/a
+     page=1
+    '''
+    per_page = 20
+    pageID = request.args.get('page', default=1, type=int)
+    if pageID < 1:
+        pageID = 1
+    tagID = request.args.get('id', default=None, type=str)
+    if not tagID:
+        return jsonify(status=400, message="tagID is required.")
+    tagID = [str(int(t)) for t in tagID.split(',') if t.isdigit()]
+    # あんまり長いと負荷がかかりそうなので制限
+    if len(tagID) > 5:
+        tagID = tagID[:5]
+    filterHaving = ' AND '.join([f"SUM(tagID='{t}')" for t in tagID])
+    sortMethod = request.args.get('sort', default="d", type=str)
+    sortMethod = "illustDate" if sortMethod == "d" else "illustLike"
+    order = request.args.get('order', default="d", type=str)
+    order = "DESC" if order == "d" else "ASC"
+    illustCount = g.db.get(
+        "SELECT COUNT(illustID) FROM "
+        + "(SELECT illustID FROM data_tag "
+        + f"GROUP BY illustID HAVING {filterHaving}) AS T1"
+    )
+    illustCount = illustCount[0][0]
+    if illustCount == 0:
+        return jsonify(status=404, message="No matched illusts.")
+    tagName = g.db.get(
+        f"SELECT tagName FROM info_tag WHERE tagID In ({','.join(tagID)})"
+    )
+    tagName = " ".join([t[0] for t in tagName])
+    pages, extra_page = divmod(illustCount, per_page)
+    if extra_page > 0:
+        pages += 1
+    illusts = g.db.get(
+        "SELECT illustID,data_illust.artistID,illustName,illustDescription,"
+        + "illustDate,illustPage,illustLike,"
+        + "illustOriginUrl,illustOriginSite,illustNsfw,artistName,"
+        + "illustExtension,illustStatus "
+        + "FROM data_illust INNER JOIN "
+        + "info_artist ON data_illust.artistID = info_artist.artistID "
+        + "WHERE illustID IN "
+        + "(SELECT illustID FROM data_tag "
+        + f"GROUP BY illustID HAVING {filterHaving}) "
+        + "AND illustStatus=0 "
+        + "ORDER BY %s %s "
+        + "LIMIT %s OFFSET %s",
+        (sortMethod, order, per_page, per_page*(pageID-1))
+    )
+    # ないとページ番号が不正なときに爆発する
+    if not len(illusts):
+        return jsonify(status=404, message="No matched illusts.")
+    illustIDs = [i[0] for i in illusts]
+    # マイリストされた回数を気合で取ってくる
+    mylistDict = getMylistCountDict(illustIDs)
+    # 自分がマイリストしたかどうかを気合で取ってくる
+    mylistedDict = getMylistedDict(illustIDs)
+    return jsonify(
+        status=200,
+        message="found",
+        data={
+            "title": tagName,
+            "count": illustCount,
+            "current": pageID,
+            "pages": pages,
+            "imgs": [{
+                "illustID": i[0],
+                "artistID": i[1],
+                "title": i[2],
+                "caption": i[3],
+                "date": i[4].strftime('%Y-%m-%d %H:%M:%S'),
+                "pages": i[5],
+                "like": i[6],
+                "mylist": mylistDict[str(i[0])],
+                "mylisted": mylistedDict[str(i[0])],
+                "originUrl": i[7],
+                "originService": i[8],
+                "nsfw": i[9],
+                "artist": {
+                    "name": i[10]
+                },
+                "extension": i[11]
+            } for i in illusts]
+        }
+    )

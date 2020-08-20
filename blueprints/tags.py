@@ -41,7 +41,7 @@ def addTag():
     else:
         nsfw = "0"
     resp = g.db.edit(
-        "INSERT INTO `info_tag`(`userID`,`tagType`,`tagName`,`tagDescription`,`tagNsfw`) VALUES (%s,%s,%s,%s,%s);",
+        "INSERT INTO `info_tag`(`userID`,`tagType`,`tagName`,`tagDescription`,`tagNsfw`) VALUES (%s,%s,%s,%s,%s)",
         (g.userID, tagType, tagName, tagDescription, nsfw)
     )
     if resp:
@@ -130,3 +130,25 @@ def editTag(tagID):
         if not resp:
             return jsonify(status=400, message="The tagName is already exists.")
     return jsonify(status=200, message="Update succeed.")
+
+
+@tags_api.route('/finds', methods=["GET"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def getTagListByKeyword():
+    keyword = request.args.get('keyword', default=None, type=str)
+    resp = g.db.get(
+        "SELECT tagID,tagName FROM info_tag "
+        + "WHERE tagName LIKE %s ORDER BY tagID ASC LIMIT 20",
+        (f'%{keyword}%',)
+    )
+    if len(resp) == 0:
+        return jsonify(
+            status=404,
+            message="not found"
+        )
+    return jsonify(
+        status=200,
+        message="ok",
+        data=[{'id': r[0], 'name':r[1]} for r in resp]
+    )
