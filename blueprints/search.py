@@ -820,7 +820,7 @@ def searchByImage():
 def searchByMultipleTag():
     '''
     REQ
-     tagID=1,2,3,4
+     id=1,2,3,4
      sort=d/l
      order=d/a
      page=1
@@ -867,9 +867,8 @@ def searchByMultipleTag():
         + "(SELECT illustID FROM data_tag "
         + f"GROUP BY illustID HAVING {filterHaving}) "
         + "AND illustStatus=0 "
-        + "ORDER BY %s %s "
-        + "LIMIT %s OFFSET %s",
-        (sortMethod, order, per_page, per_page*(pageID-1))
+        + f"ORDER BY {sortMethod} {order} "
+        + f"LIMIT {per_page} OFFSET {per_page * (pageID - 1)}"
     )
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
