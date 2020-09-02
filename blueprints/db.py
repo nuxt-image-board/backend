@@ -63,7 +63,7 @@ class SQLHandler(object):
         self.conn = self.db.cursor()
 
     def get(self, sql, data=None):
-        if data == None:
+        if data is None:
             self.conn.execute(sql)
         else:
             self.conn.execute(sql, data)
