@@ -30,6 +30,7 @@ from blueprints import (
     wiki_api,
     mute_api,
     uploaders_api,
+    ranking_api,
     apiLimiter,
     apiCache
 )
@@ -149,6 +150,7 @@ def createApp():
     app.register_blueprint(wiki_api, url_prefix='/wiki')
     app.register_blueprint(mute_api, url_prefix='/mute')
     app.register_blueprint(uploaders_api, url_prefix='/uploaders')
+    app.register_blueprint(ranking_api, url_prefix='/ranking')
     # リクエスト共通処理の登録
     app.before_request(app_before_request)
     app.after_request(app_after_request)
