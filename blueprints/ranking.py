@@ -96,10 +96,10 @@ def getRankingResult(whereSql, illustCount, sortMethod):
             info_artist
         ON
             data_illust.artistID = info_artist.artistID
+        WHERE
+            {whereSql}
         GROUP BY
             illustID
-        HAVING
-            {whereSql}
         ORDER BY
             data_ranking.{sortMethod} {order}
         LIMIT {per_page} OFFSET {per_page * (pageID - 1)}"""
@@ -152,7 +152,7 @@ def getRanking(whereSql, sortMethod):
 @ranking_api.route('/daily/views', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=1800)
+@apiCache.cached(timeout=500, query_string=True)
 def getDailyViewsRanking():
     now = datetime.now()
     whereSql = f"""rankingYear={now.year}
@@ -164,7 +164,7 @@ def getDailyViewsRanking():
 @ranking_api.route('/daily/likes', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=1800)
+@apiCache.cached(timeout=300, query_string=True)
 def getDailyLikesRanking():
     now = datetime.now()
     whereSql = f"""rankingYear={now.year}
@@ -176,7 +176,7 @@ def getDailyLikesRanking():
 @ranking_api.route('/weekly/views', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=1800)
+@apiCache.cached(timeout=300, query_string=True)
 def getWeeklyViewsRanking():
     now = datetime.now()
     if now.month > 1:
@@ -193,7 +193,7 @@ def getWeeklyViewsRanking():
 @ranking_api.route('/weekly/likes', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=1800)
+@apiCache.cached(timeout=300, query_string=True)
 def getWeeklyLikesRanking():
     now = datetime.now()
     if now.month > 1:
@@ -210,7 +210,7 @@ def getWeeklyLikesRanking():
 @ranking_api.route('/monthly/views', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=1800)
+@apiCache.cached(timeout=300, query_string=True)
 def getMonthlyViewsRanking():
     year = request.args.get('year', default=datetime.now().year, type=int)
     month = request.args.get('month', default=datetime.now().month, type=int)
@@ -221,6 +221,7 @@ def getMonthlyViewsRanking():
 @ranking_api.route('/monthly/likes', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @apiLimiter.limit(handleApiPermission)
+@apiCache.cached(timeout=300, query_string=True)
 def getMonthlyLikesRanking():
     year = request.args.get('year', default=datetime.now().year, type=int)
     month = request.args.get('month', default=datetime.now().month, type=int)
