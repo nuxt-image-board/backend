@@ -44,9 +44,9 @@ def verify_token(token):
     g.userID = None
     try:
         data = token_serializer.loads(token)
-        print(data)
+        # print(data)
     except:  # noqa: E722
-        print("VerifyFailed")
+        # print("VerifyFailed")
         return False
     if 'id' in data:
         g.userID = data['id']
