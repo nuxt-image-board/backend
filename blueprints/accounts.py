@@ -48,6 +48,7 @@ NOTIFY_CHANNEL_SECRET = "***REMOVED***"
 NOTIFY_ENDPOINT = "https://notify-bot.line.me/oauth/token"
 NOTIFY_REDIRECT_URI_CONNECT = "https://***REMOVED***/line_notify_connect"
 
+TELEGRAM_BOT_TOKEN = "***REMOVED***"
 TOYMONEY_ENDPOINT = "http://127.0.0.1:7070"
 
 
@@ -62,7 +63,8 @@ def generateApiKey(accountID):
         'permission': apiPermission
     }).decode('utf-8')
     resp = g.db.edit(
-        "UPDATE data_user SET userApiSeq=userApiSeq+1, userApiKey=%s WHERE userID=%s",
+        """UPDATE data_user SET userApiSeq=userApiSeq+1, userApiKey=%s
+        WHERE userID=%s""",
         (token, accountID)
     )
     if not resp:
@@ -79,12 +81,18 @@ def createAccount():
     # 入力チェック
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     if "displayID" not in params\
             or "username" not in params\
             or "password" not in params\
             or "inviteCode" not in params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     displayID = g.validate(params["displayID"], lengthMax=20)
     username = g.validate(params["username"], lengthMax=20)
     inviteCode = g.validate(params["inviteCode"], lengthMax=10)
@@ -101,7 +109,10 @@ def createAccount():
         "userDisplayID=%s OR userName=%s",
         (displayID, username)
     ):
-        return jsonify(status=409, message="userDisplayID or userName is already used.")
+        return jsonify(
+            status=409,
+            message="userDisplayID or userName is already used."
+        )
     # パスワード生成
     password = g.validate(params["password"], lengthMin=5, lengthMax=50)
     password = "***REMOVED***"+password
@@ -127,12 +138,15 @@ def createAccount():
         return jsonify(status=500, message="Server bombed.")
     # 作成したユーザーID取得
     userID = g.db.get(
-        "SELECT userID FROM data_user WHERE userDisplayID=%s AND userPassword=%s",
+        """SELECT userID FROM data_user
+        WHERE userDisplayID=%s AND userPassword=%s""",
         (displayID, password)
     )[0][0]
     # 使う招待コードを1つ取る
     inviteID = g.db.get(
-        "SELECT inviteID FROM data_invite WHERE invitee IS NULL AND inviteCode=%s ORDER BY inviteID ASC LIMIT 1",
+        """SELECT inviteID FROM data_invite
+        WHERE invitee IS NULL AND inviteCode=%s
+        ORDER BY inviteID ASC LIMIT 1""",
         (inviteCode, )
     )[0][0]
     # 招待コードを利用済みにする
@@ -161,32 +175,48 @@ def createAccount():
         apiKey=apiKey
     )
 
+
 # APIリミットが必要だと思う
 @accounts_api.route('/login/form', methods=["POST"])
 def loginAccountWithForm():
     '''アカウント名とパスワード もしくはLINE認証コードでログイン'''
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
-    if not ("id" in params and "password" in params):
-        return jsonify(status=400, message="Request parameters are not satisfied.")
-    # ID + パスワードログイン
-    if "code" not in params:
-        password = "***REMOVED***"+params["password"]
-        password = hashlib.sha256(password.encode("utf8")).hexdigest()
-        apiKey = g.db.get(
-            "SELECT userApiKey FROM data_user WHERE userDisplayID=%s AND userPassword=%s",
-            (params["id"], password)
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
         )
-        if not apiKey:
+    # Telegramログイン
+    if "hash" in params:
+        # resp/hashが必要
+        if "resp" not in params:
+            return jsonify(
+                status=400,
+                message="Request parameters are not satisfied."
+            )
+        # 応答のハッシュとパラメータのハッシュが一致するか確認
+        resp = "\n".join(
+            [p + "=" + params["resp"][p] for p in params["resp"].keys()]
+        )
+        resp_hash = hashlib.sha256(resp.encode("utf8")).hexdigest()
+        param_hash = params["resp"]
+        if resp_hash != param_hash:
+            return jsonify(status=401, message="hash mismatch")
+        telegramUserId = params["resp"]["id"]
+        if not g.db.has("data_user", "userTelegramID=%s", (telegramUserId,)):
             return jsonify(status=404, message="account not found")
+        apiKey = g.db.get(
+            "SELECT userApiKey FROM data_user WHERE userTelegramID=%s",
+            (telegramUserId,)
+        )[0][0]
         return jsonify(
             status=200,
             message="welcome back",
-            apiKey=apiKey[0][0]
+            apiKey=apiKey
         )
     # LINEログイン
-    else:
+    elif "code" in params:
+        # codeが必要
         code = params["code"]
         headers = {
             "Content-Type": "application/x-www-form-urlencoded"
@@ -200,7 +230,6 @@ def loginAccountWithForm():
         }
         lineResp = requests.post(
             LINE_ENDPOINT, headers=headers, data=params).json()
-        print(lineResp)
         if 'error' in lineResp:
             return jsonify(status=401, message="line authorization failed")
         lineIDToken = lineResp["id_token"]
@@ -215,12 +244,37 @@ def loginAccountWithForm():
         if not g.db.has("data_user", "userLineID=%s", (lineUserID,)):
             return jsonify(status=404, message="account not found")
         apiKey = g.db.get(
-            "SELECT userApiKey FROM data_user WHERE userLineID=%s", (lineUserID,))[0][0]
+            "SELECT userApiKey FROM data_user WHERE userLineID=%s",
+            (lineUserID,)
+        )[0][0]
         return jsonify(
             status=200,
             message="welcome back",
             apiKey=apiKey
         )
+    # ID/パスワードログイン
+    else:
+        # id/passwordが必要
+        if not ("id" in params and "password" in params):
+            return jsonify(
+                status=400,
+                message="Request parameters are not satisfied."
+            )
+        password = "***REMOVED***"+params["password"]
+        password = hashlib.sha256(password.encode("utf8")).hexdigest()
+        apiKey = g.db.get(
+            """SELECT userApiKey FROM data_user
+            WHERE userDisplayID=%s AND userPassword=%s""",
+            (params["id"], password)
+        )
+        if not apiKey:
+            return jsonify(status=404, message="account not found")
+        return jsonify(
+            status=200,
+            message="welcome back",
+            apiKey=apiKey[0][0]
+        )
+
 
 # APIリミットが必要だと思う
 @accounts_api.route('/login/line', methods=["POST"])
@@ -258,12 +312,51 @@ def loginAccountWithLine():
     if not g.db.has("data_user", "userLineID=%s", (lineUserID,)):
         return jsonify(status=404, message="account not found")
     apiKey = g.db.get(
-        "SELECT userApiKey FROM data_user WHERE userLineID=%s", (lineUserID,))[0][0]
+        "SELECT userApiKey FROM data_user WHERE userLineID=%s",
+        (lineUserID,)
+    )[0][0]
     return jsonify(
         status=200,
         message="welcome back",
         apiKey=apiKey
     )
+
+
+@accounts_api.route('/<int:accountID>/connect/telegram', methods=["POST"])
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def connectTelegramAccount(accountID):
+    # 一般権限&本人の要求 もしくは 全体管理者権限を要求
+    if g.userID != accountID and g.userPermission < 9:
+        return jsonify(
+            status=403,
+            message="You don't have enough permissions."
+        )
+    params = request.get_json()
+    if not params:
+        return jsonify(status=403, message="Direct access is not allowed.")
+    if not ("id" in params and "resp" in params and "hash" in params):
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
+    # 応答のハッシュとパラメータのハッシュが一致するか確認
+    resp = "\n".join(
+        [p + "=" + params["resp"][p] for p in params["resp"].keys()]
+    )
+    resp_hash = hashlib.sha256(resp.encode("utf8")).hexdigest()
+    param_hash = params["resp"]
+    if resp_hash != param_hash:
+        return jsonify(status=401, message="hash mismatch")
+    telegramUserId = params["resp"]["id"]
+    resp = g.db.edit(
+        "UPDATE data_user SET userTelegramID=%s WHERE userID=%s",
+        (telegramUserId, g.userID)
+    )
+    if not resp:
+        return jsonify(status=500, message="Server bombed.")
+    recordApiRequest(g.userID, "connectTelegramAccount", param1=accountID)
+    return jsonify(status=200, message="ok")
 
 
 @accounts_api.route('/<int:accountID>/connect/line', methods=["POST"])
@@ -272,7 +365,10 @@ def loginAccountWithLine():
 def connectLineAccount(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:
-        return jsonify(status=403, message="You don't have enough permissions.")
+        return jsonify(
+            status=403,
+            message="You don't have enough permissions."
+        )
     params = request.get_json()
     if not params:
         return jsonify(status=403, message="Direct access is not allowed.")
@@ -318,7 +414,10 @@ def connectLineAccount(accountID):
 def connectLineNotify(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:
-        return jsonify(status=403, message="You don't have enough permissions.")
+        return jsonify(
+            status=403,
+            message="You don't have enough permissions."
+        )
     params = request.get_json()
     if not params:
         return jsonify(status=403, message="Direct access is not allowed.")
@@ -464,7 +563,8 @@ def getSelfAccount():
 @apiCache.cached(timeout=5)
 def getAccount(accountID):
     resp = g.db.get(
-        "SELECT userID,userDisplayID,userName,userFavorite FROM data_user WHERE userID=%s",
+        """SELECT userID,userDisplayID,userName,userFavorite FROM data_user
+        WHERE userID=%s""",
         (accountID,)
     )
     if not resp or accountID in [0, 1, 2]:
@@ -495,7 +595,10 @@ def getUploadHistory(accountID):
      page=1
     '''
     if g.userID != accountID and g.userPermission < 9:
-        return jsonify(status=400, message="You don't have enough permissions.")
+        return jsonify(
+            status=400,
+            message="You don't have enough permissions."
+        )
     sortMethod = "uploadID"
     per_page = 20
     pageID = request.args.get('page', default=1, type=int)
@@ -543,7 +646,10 @@ def getUploadHistory(accountID):
 @apiLimiter.limit(handleApiPermission)
 def regenerateApiKey(accountID):
     if g.userID != accountID and g.userPermission < 9:
-        return jsonify(status=400, message="You don't have enough permissions.")
+        return jsonify(
+            status=403,
+            message="You don't have enough permissions."
+        )
     apiKey = generateApiKey(accountID)
     return jsonify(status=201, message="ok", apiKey=apiKey)
 
@@ -554,7 +660,10 @@ def regenerateApiKey(accountID):
 def destroyAccount(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:
-        return jsonify(status=403, message="You don't have enough permissions.")
+        return jsonify(
+            status=403,
+            message="You don't have enough permissions."
+        )
     resp = g.db.edit(
         "UPDATE illust_main SET userID=0 WHERE userID=?",
         (accountID,)
@@ -577,7 +686,10 @@ def destroyAccount(accountID):
 def editAccount(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:
-        return jsonify(status=403, message="You don't have enough permissions.")
+        return jsonify(
+            status=403,
+            message="You don't have enough permissions."
+        )
     params = request.get_json()
     validParams = [
         "userDisplayID",
@@ -595,7 +707,10 @@ def editAccount(accountID):
         for p in params.keys() if p in validParams
     }
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     for p in params.keys():
         if p == "userOldPassword":
             continue
@@ -603,7 +718,9 @@ def editAccount(accountID):
             continue
         if p == "userPassword":
             params["userOldPassword"] = "***REMOVED***"+params["userOldPassword"]
-            old_passwd = hashlib.sha256(params["userOldPassword"].encode("utf8")).hexdigest()
+            old_passwd = hashlib.sha256(
+                params["userOldPassword"].encode("utf8")
+            ).hexdigest()
             resp = g.db.get(
                 "SELECT userID FROM data_user WHERE userPassword = %s",
                 (old_passwd,)
