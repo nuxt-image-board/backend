@@ -4,35 +4,21 @@ from general import (
     app_before_request,
     app_after_request,
     app_teardown_appcontext,
-    app_index,
-    app_favicon,
+    app_index, app_favicon,
     error_unauthorized,
     error_not_found,
     error_ratelimit,
     error_server_bombed
 )
 from blueprints import (
-    accounts_api,
-    artists_api,
-    arts_api,
-    catalog_api,
-    characters_api,
-    navigations_api,
-    search_api,
-    tags_api,
-    scrape_api,
-    news_api,
-    notify_api,
-    invites_api,
-    superuser_api,
-    mylist_api,
-    toymoney_api,
-    wiki_api,
-    mute_api,
-    uploaders_api,
+    accounts_api, artists_api, arts_api,
+    catalog_api, characters_api, navigations_api,
+    search_api, tags_api, scrape_api,
+    news_api, notify_api, invites_api,
+    superuser_api, mylist_api, toymoney_api,
+    wiki_api, mute_api, uploaders_api,
     ranking_api,
-    apiLimiter,
-    apiCache
+    apiLimiter, apiCache
 )
 import json
 
@@ -168,7 +154,11 @@ def createApp():
     CORS(
         app,
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        origins=["http://localhost:3000", "https://***REMOVED***", "https://***REMOVED***"],
+        origins=[
+            "http://localhost:3000",
+            "https://***REMOVED***",
+            "https://***REMOVED***"
+        ],
         max_age=604800
     )
     return app

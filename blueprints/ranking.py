@@ -1,13 +1,13 @@
 from flask import Blueprint, g, request, jsonify, escape, current_app
+from datetime import datetime, timedelta
 from .authorizator import auth, token_serializer
 from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
 from .cache import apiCache
-from datetime import datetime, timedelta
-import calendar
-import os
-import json
 import traceback
+import calendar
+import json
+import os
 
 ranking_api = Blueprint('ranking_api', __name__)
 
@@ -186,7 +186,10 @@ def getWeeklyViewsRanking():
     whereSql = f"""rankingYear={now.year} AND (
         (rankingMonth={now.month} AND rankingDay>={now.day-7})
         OR
-        (rankingMonth={now.month-1} AND rankingDay>={month_days-((now.day-7)*-1)}))"""
+        (
+            rankingMonth={now.month-1} AND
+            rankingDay>={month_days-((now.day-7)*-1)}
+        ))"""
     return getRanking(whereSql, "totalView")
 
 
@@ -203,7 +206,10 @@ def getWeeklyLikesRanking():
     whereSql = f"""rankingYear={now.year} AND (
         (rankingMonth={now.month} AND rankingDay>={now.day-7})
         OR
-        (rankingMonth={now.month-1} AND rankingDay>={month_days-((now.day-7)*-1)}))"""
+        (
+            rankingMonth={now.month-1} AND
+            rankingDay>={month_days-((now.day-7)*-1)}
+        ))"""
     return getRanking(whereSql, "totalLike")
 
 

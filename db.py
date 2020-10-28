@@ -1,5 +1,5 @@
-import sqlite3
 import mysql.connector
+
 
 class SQLHandler(object):
     def __init__(self,
@@ -18,7 +18,7 @@ class SQLHandler(object):
         self.conn = self.db.cursor()
 
     def get(self, sql, data=None):
-        if data == None:
+        if data is None:
             self.conn.execute(sql)
         else:
             self.conn.execute(sql, data)
