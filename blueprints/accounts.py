@@ -189,20 +189,20 @@ def loginAccountWithForm():
     # Telegramログイン
     if "hash" in params:
         # resp/hashが必要
-        if "resp" not in params:
+        if "query" not in params:
             return jsonify(
                 status=400,
                 message="Request parameters are not satisfied."
             )
         # 応答のハッシュとパラメータのハッシュが一致するか確認
         resp = "\n".join(
-            [p + "=" + params["resp"][p] for p in params["resp"].keys()]
+            [p + "=" + params["query"][p] for p in params["query"].keys()]
         )
         resp_hash = hashlib.sha256(resp.encode("utf8")).hexdigest()
-        param_hash = params["resp"]
+        param_hash = params["hash"]
         if resp_hash != param_hash:
             return jsonify(status=401, message="hash mismatch")
-        telegramUserId = params["resp"]["id"]
+        telegramUserId = params["query"]["id"]
         if not g.db.has("data_user", "userTelegramID=%s", (telegramUserId,)):
             return jsonify(status=404, message="account not found")
         apiKey = g.db.get(
@@ -335,7 +335,7 @@ def connectTelegramAccount(accountID):
     params = request.get_json()
     if not params:
         return jsonify(status=403, message="Direct access is not allowed.")
-    if not ("id" in params and "resp" in params and "hash" in params):
+    if not ("resp" in params and "hash" in params):
         return jsonify(
             status=400,
             message="Request parameters are not satisfied."
