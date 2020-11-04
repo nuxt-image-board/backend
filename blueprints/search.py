@@ -421,7 +421,7 @@ def searchByImageAtAscii2d():
             message='ok',
             data={
                 'url': result["color"]["url"],
-                'result': result["color"]["result"][:5] + result["bovw"]["result"][:5]
+                'result': result["color"]["result"][:4] + result["bovw"]["result"][:4]
             }
         )
 
