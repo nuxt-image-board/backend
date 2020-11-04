@@ -3,6 +3,7 @@ from .authorizator import auth, token_serializer
 from .limiter import apiLimiter, handleApiPermission
 from .recorder import recordApiRequest
 from .lib.saucenao_client import SauceNaoImageSearch
+from .lib.ascii2d_client import Ascii2dImageSearch
 from .cache import apiCache
 import json
 from PIL import Image
@@ -386,6 +387,41 @@ def searchByImageAtSauceNao():
             message='ok',
             data={
                 'result': result
+            }
+        )
+
+
+@search_api.route('/image/ascii2d', methods=["POST"], strict_slashes=False)
+@auth.login_required
+@apiLimiter.limit(handleApiPermission)
+def searchByImageAtAscii2d():
+    if g.userPermission not in [0, 9]:
+        return jsonify(status=400, message="Bad request")
+    if "file" not in request.files:
+        return jsonify(status=400, message="File must be included")
+    file = request.files['file']
+    # ファイル拡張子確認
+    if isNotAllowedFile(file.filename):
+        return jsonify(status=400, message="The file is not allowed")
+    with TemporaryDirectory() as temp_path:
+        # 画像を一旦保存して確認
+        uniqueID = str(uuid4()).replace("-", "")
+        uniqueID = b64encode(uniqueID.encode("utf8")).decode("utf8")[:-1]
+        tempPath = os.path.join(temp_path, uniqueID)
+        file.save(tempPath)
+        fileExt = what_img(tempPath)
+        if not fileExt:
+            return jsonify(status=400, message="The file is not allowed")
+        cl = Ascii2dImageSearch(
+            current_app.config['imgurToken']
+        )
+        result = cl.search(tempPath)
+        return jsonify(
+            status=200,
+            message='ok',
+            data={
+                'url': result["color"]["url"],
+                'result': result["color"]["result"][:5] + result["bovw"]["result"][:5]
             }
         )
 
