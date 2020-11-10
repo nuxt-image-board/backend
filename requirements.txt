@@ -7,6 +7,7 @@ Flask-HTTPAuth==3.3.0
 # Authorization
 PyJWT==1.4.2
 hashids==1.2.0
+itsdangerous==0.24
 # Image search
 ImageHash==4.0
 # Image process
