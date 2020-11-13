@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: gcir_mariadb
+    hostname: mariadb
+    image: mariadb
+    restart: always
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    volumes:
+      - ${VOLUME_DB_PATH}:/var/lib/mysql:delegated
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+  adminer:
+    container_name: gcir_adminer
+    hostname: adminer
+    image: adminer
+    restart: always
+    ports:
+      - ${PORT_ADMINER}:8080
+    depends_on:
+      - db
+  api:
+    build: .
+    container_name: gcir_api
+    volumes:
+      - ${VOLUME_API_PATH}:/usr/local/app/static
+    ports:
+      - ${PORT_API}:5000
+    depends_on:
+      - db

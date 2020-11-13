@@ -107,3 +107,5 @@ venv.bak/
 /*.json
 blueprints/*.json
 static/illusts/
+db_data
+api_data
