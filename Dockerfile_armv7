@@ -1,6 +1,5 @@
 # Pythonイメージの取得
-FROM ghcr.io/gochiira/main-backend-depends:latest
-# モジュールを揃える
+FROM ghcr.io/gochiira/main-backend-depends:armv7
 WORKDIR /usr/local/app
 COPY . .
 # 起動環境設定
