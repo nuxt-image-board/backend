@@ -1,5 +1,5 @@
 from flask import Flask, g, request, jsonify, Blueprint, current_app
-from .authorizator import auth
+from ..extensions.httpauth import auth
 from ..extensions.limiter import limiter, handleApiPermission
 from .recorder import recordApiRequest
 

@@ -18,9 +18,15 @@ def addTag():
         return jsonify(status=400, message='Bad request')
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     if "tagName" not in params.keys():
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     try:
         params = {p: g.validate(params[p]) for p in params.keys()}
     except:
@@ -101,7 +107,10 @@ def editTag(tagID):
         return jsonify(status=400, message='Bad request')
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     validParams = {
         "name": "tagName",
         "description": "tagDescription",
@@ -128,7 +137,10 @@ def editTag(tagID):
             (params[p], tagID,)
         )
         if not resp:
-            return jsonify(status=400, message="The tagName is already exists.")
+            return jsonify(
+                status=400,
+                message="The tagName is already exists."
+            )
     return jsonify(status=200, message="Update succeed.")
 
 
