@@ -2,18 +2,13 @@ import mysql.connector
 
 
 class SQLHandler(object):
-    def __init__(self,
-                 file_name="***REMOVED***",
-                 host="***REMOVED***",
-                 port="3306",
-                 user="***REMOVED***",
-                 password="***REMOVED***"):
+    def __init__(self, db, host, port, user, password):
         self.db = mysql.connector.connect(
             host=host,
             port=port,
             user=user,
             password=password,
-            database=file_name
+            database=db
         )
         self.conn = self.db.cursor()
 
@@ -45,8 +40,10 @@ class SQLHandler(object):
             return False
 
     def has(self, tableName, condition, data=None):
-        d = self.get("SELECT 'T' FROM %s WHERE %s" %
-                     (tableName, condition), data)
+        d = self.get(
+            "SELECT 'T' FROM {tableName} WHERE {condition}",
+            data
+        )
         if len(d) > 0:
             return True
         else:

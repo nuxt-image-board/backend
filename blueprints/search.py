@@ -1,4 +1,4 @@
-from flask import Blueprint, g, request, jsonify, escape, current_app
+from flask import Blueprint, g, request, jsonify, escape
 from ..extensions.auth import auth, token_serializer
 from ..extensions.limiter import limiter, handleApiPermission
 from ..extensions.cache import cache
@@ -14,7 +14,12 @@ from uuid import uuid4
 import os.path
 from imghdr import what as what_img
 from imghdr import tests
+from os import environ
+from dotenv import load_dotenv
+load_dotenv(verbose=True, override=True)
 
+IMGUR_TOKEN = environ.get('API_IMGUR_TOKEN')
+SAUCENAO_TOKEN = environ.get('API_SAUCENAO_TOKEN')
 ALLOWED_EXTENSIONS = ["gif", "png", "jpg", "jpeg", "webp"]
 
 JPEG_MARK = b'\xff\xd8\xff\xdb\x00C\x00\x08\x06\x06' \
@@ -378,8 +383,8 @@ def searchByImageAtSauceNao():
         if not fileExt:
             return jsonify(status=400, message="The file is not allowed")
         cl = SauceNaoImageSearch(
-            current_app.config['imgurToken'],
-            current_app.config['saucenaoToken']
+            IMGUR_TOKEN,
+            SAUCENAO_TOKEN
         )
         result = cl.search(tempPath)
         return jsonify(
@@ -413,7 +418,7 @@ def searchByImageAtAscii2d():
         if not fileExt:
             return jsonify(status=400, message="The file is not allowed")
         cl = Ascii2dImageSearch(
-            current_app.config['imgurToken']
+            IMGUR_TOKEN
         )
         result = cl.search(tempPath)
         return jsonify(

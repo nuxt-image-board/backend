@@ -3,9 +3,12 @@ from ..extensions.auth import auth, token_serializer
 from ..extensions.limiter import limiter, handleApiPermission
 from .recorder import recordApiRequest
 import requests
+from os import environ
+from dotenv import load_dotenv
+load_dotenv(verbose=True, override=True)
 
 toymoney_api = Blueprint('toymoney_api', __name__)
-TOYMONEY_ENDPOINT = "http://127.0.0.1:7070"
+TOYMONEY_ENDPOINT = environ.get('API_TOYMONEY_ENDPOINT')
 
 
 @toymoney_api.route(

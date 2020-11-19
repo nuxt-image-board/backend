@@ -7,53 +7,23 @@ from datetime import datetime
 import hashlib
 import requests
 import jwt
-from .authorizator import auth, token_serializer
-from .limiter import apiLimiter, handleApiPermission
-from .recorder import recordApiRequest
-from .cache import apiCache
+from os import environ
+from dotenv import load_dotenv
+load_dotenv(verbose=True, override=True)
 
 accounts_api = Blueprint('accounts_api', __name__)
 
-'''
-アカウントAPI
-
-アカウントの管理などは難読化したAPIにやらせる
-
-[アカウント新規登録の流れ]
-1. RECAPCHAをチェック
-2. 管理者としてPOST
-3. 必要情報(表示ID/ユーザー名/パスワード)をチェック
-4. SALTなどをデータベースに登録
-
-[API新規登録の流れ]
-1. 管理者として指定されたユーザーIDにGETリクエスト
-2. 指定ユーザーのデータベースのuserApiSeqを増加させる(APIキーを発行/再発行する)
-3.　トークンを発行
-
-[検証の流れ]
-1. 読み込み
-2. すべて一致しているか確認(ついでにuserPermissionも取得)
-3. 大丈夫そうならログイン成功
-
-Permission
- 0: 一般ユーザ(部分書き込みと読み取り)
- 2: モデレータ
- 5: 管理者(サイト上で実行される)(埋め込みのため、念の為削除権限を持たせないで置く)
-'''
-
-LINE_CHANNEL_ID = "***REMOVED***"
-LINE_CHANNEL_SECRET = "***REMOVED***"
-LINE_ENDPOINT = "https://api.line.me/oauth2/v2.1/token"
-LINE_REDIRECT_URI_LOGIN = "https://***REMOVED***/line_callback"
-LINE_REDIRECT_URI_CONNECT = "https://***REMOVED***/line_connect"
-
-NOTIFY_CHANNEL_ID = "***REMOVED***"
-NOTIFY_CHANNEL_SECRET = "***REMOVED***"
-NOTIFY_ENDPOINT = "https://notify-bot.line.me/oauth/token"
-NOTIFY_REDIRECT_URI_CONNECT = "https://***REMOVED***/line_notify_connect"
-
-TELEGRAM_BOT_TOKEN = "***REMOVED***"
-TOYMONEY_ENDPOINT = "http://127.0.0.1:7070"
+SALT_PASS = environ.get('SALT_PASS')
+LINE_CHANNEL_ID = environ.get('AUTH_LINE_CHANNEL_ID')
+LINE_CHANNEL_SECRET = environ.get('AUTH_LINE_CHANNEL_SECRET')
+LINE_ENDPOINT = environ.get('AUTH_LINE_ENDPOINT')
+LINE_REDIRECT_URI_LOGIN = environ.get('AUTH_LINE_REDIRECT_LOGIN')
+LINE_REDIRECT_URI_CONNECT = environ.get('AUTH_LINE_REDIRECT_CONNECT')
+NOTIFY_CHANNEL_ID = environ.get('AUTH_LINE_NOTIFY_ID')
+NOTIFY_CHANNEL_SECRET = environ.get('AUTH_LINE_NOTIFY_SECRET')
+NOTIFY_ENDPOINT = environ.get('AUTH_LINE_NOTIFY_ENDPOINT')
+NOTIFY_REDIRECT_URI_CONNECT = environ.get('AUTH_LINE_NOTIFY_CONNECT')
+TOYMONEY_ENDPOINT = environ.get('API_TOYMONEY_ENDPOINT')
 
 
 def generateApiKey(accountID):
@@ -119,7 +89,7 @@ def createAccount():
         )
     # パスワード生成
     password = g.validate(params["password"], lengthMin=5, lengthMax=50)
-    password = "***REMOVED***"+password
+    password = SALT_PASS+password
     password = hashlib.sha256(password.encode("utf8")).hexdigest()
     # ToyMoneyServerにリクエストする
     toyApiResp = requests.post(
@@ -262,7 +232,7 @@ def loginAccountWithForm():
                 status=400,
                 message="Request parameters are not satisfied."
             )
-        password = "***REMOVED***"+params["password"]
+        password = SALT_PASS+params["password"]
         password = hashlib.sha256(password.encode("utf8")).hexdigest()
         apiKey = g.db.get(
             """SELECT userApiKey FROM data_user
@@ -719,7 +689,7 @@ def editAccount(accountID):
         if p == "userPermission" and g.userPermission < 9:
             continue
         if p == "userPassword":
-            params["userOldPassword"] = "***REMOVED***"+params["userOldPassword"]
+            params["userOldPassword"] = SALT_PASS+params["userOldPassword"]
             old_passwd = hashlib.sha256(
                 params["userOldPassword"].encode("utf8")
             ).hexdigest()
@@ -730,7 +700,7 @@ def editAccount(accountID):
             if resp == []:
                 return jsonify(status=400, message="password mismatch")
             params[p] = g.validate(params[p], lengthMin=5, lengthMax=50)
-            params[p] = "***REMOVED***"+params[p]
+            params[p] = SALT_PASS+params[p]
             params[p] = hashlib.sha256(params[p].encode("utf8")).hexdigest()
         resp = g.db.edit(
             "UPDATE `data_user` SET `" + p + "`=%s WHERE userID=%s",
