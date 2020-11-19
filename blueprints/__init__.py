@@ -17,9 +17,7 @@ from .wiki import wiki_api
 from .mute import mute_api
 from .uploaders import uploaders_api
 from .ranking import ranking_api
-from .authorizator import auth
-from .limiter import apiLimiter
-from .cache import apiCache
+
 
 __all__ = [
     "accounts_api",
@@ -40,8 +38,5 @@ __all__ = [
     "wiki_api",
     "mute_api",
     "uploaders_api",
-    "ranking_api",
-    "auth",
-    "apiLimiter",
-    "apiCache"
+    "ranking_api"
 ]
