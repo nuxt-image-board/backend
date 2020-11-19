@@ -1,5 +1,5 @@
 from flask import g, jsonify, current_app
-from db import SQLHandler
+from ..db import SQLHandler
 from os import environ
 from dotenv import load_dotenv
 import html

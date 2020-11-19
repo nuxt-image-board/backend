@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from general import (
+from api.blueprints.general import (
     app_before_request,
     app_after_request,
     app_teardown_appcontext,
