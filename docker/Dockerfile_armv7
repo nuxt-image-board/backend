@@ -1,7 +1,7 @@
 # Pythonイメージの取得
 FROM ghcr.io/gochiira/main-backend-depends:armv7
 WORKDIR /usr/local/app
-COPY . .
+COPY ../ .
 # 起動環境設定
 EXPOSE 5000
 ENTRYPOINT [ "gunicorn", "app:app" ]

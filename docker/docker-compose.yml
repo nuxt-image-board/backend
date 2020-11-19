@@ -24,7 +24,7 @@ services:
     depends_on:
       - db
   api:
-    build: .
+    build: .Dockerfile_amd64
     container_name: gcir_api
     volumes:
       - ${VOLUME_API_PATH}:/usr/local/app/static
