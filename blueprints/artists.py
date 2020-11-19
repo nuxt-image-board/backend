@@ -1,6 +1,6 @@
 from flask import Blueprint, request, g, jsonify
-from .authorizator import auth, token_serializer
-from .limiter import apiLimiter, handleApiPermission
+from ..extensions.auth import auth, token_serializer
+from ..extensions.limiter import limiter, handleApiPermission
 from .recorder import recordApiRequest
 
 artists_api = Blueprint('artists_api', __name__)
@@ -12,7 +12,7 @@ artists_api = Blueprint('artists_api', __name__)
 
 @artists_api.route('/', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def addArtist():
     # 全体管理者権限を要求(一般ユーザーは作品投稿時点で処理)
     if g.userPermission != 9:
@@ -66,7 +66,7 @@ def addArtist():
 
 @artists_api.route('/<int:artistID>', methods=["DELETE"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def removeArtist(artistID):
     # 全体管理者権限を要求
     if g.userPermission != 9:
@@ -97,7 +97,7 @@ def removeArtist(artistID):
 
 @artists_api.route('/<int:artistID>', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def getArtist(artistID):
     recordApiRequest(g.userID, "getArtist", param1=artistID)
     artistData = g.db.get(
@@ -121,7 +121,7 @@ def getArtist(artistID):
 
 @artists_api.route('/<int:artistID>', methods=["PUT"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def editArtist(artistID):
     # 一般ユーザー もしくは 全体管理者権限を要求
     if g.userPermission not in [0, 9]:

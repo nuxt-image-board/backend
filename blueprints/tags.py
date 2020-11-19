@@ -1,6 +1,6 @@
 from flask import Blueprint, g, request, jsonify, escape
-from .authorizator import auth, token_serializer
-from .limiter import apiLimiter, handleApiPermission
+from ..extensions.auth import auth, token_serializer
+from ..extensions.limiter import limiter, handleApiPermission
 from .recorder import recordApiRequest
 
 tags_api = Blueprint('tags_api', __name__)
@@ -12,7 +12,7 @@ tags_api = Blueprint('tags_api', __name__)
 
 @tags_api.route('/', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def addTag():
     if g.userPermission not in [0, 9]:
         return jsonify(status=400, message='Bad request')
@@ -55,7 +55,7 @@ def addTag():
 
 @tags_api.route('/<int:tagID>/', methods=["DELETE"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def removeTag(tagID):
     if g.userPermission not in [0, 9]:
         return jsonify(status=400, message='Bad request')
@@ -75,7 +75,7 @@ def removeTag(tagID):
 
 @tags_api.route('/<int:tagID>/', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def getTag(tagID):
     tagData = g.db.get(
         "SELECT * FROM info_tag WHERE tagID = %s", (tagID,)
@@ -95,7 +95,7 @@ def getTag(tagID):
 
 @tags_api.route('/<int:tagID>/', methods=["PUT"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def editTag(tagID):
     if g.userPermission not in [0, 9]:
         return jsonify(status=400, message='Bad request')
@@ -134,7 +134,7 @@ def editTag(tagID):
 
 @tags_api.route('/finds', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def getTagListByKeyword():
     keyword = request.args.get('keyword', default=None, type=str)
     resp = g.db.get(

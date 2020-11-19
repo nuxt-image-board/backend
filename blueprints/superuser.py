@@ -1,6 +1,6 @@
 from flask import Flask, g, request, jsonify, Blueprint
-from .authorizator import auth, token_serializer
-from .limiter import apiLimiter, handleApiPermission
+from ..extensions.auth import auth, token_serializer
+from ..extensions.limiter import limiter, handleApiPermission
 from .recorder import recordApiRequest
 import subprocess
 

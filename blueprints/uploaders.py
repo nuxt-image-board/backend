@@ -1,6 +1,6 @@
 from flask import Blueprint, request, g, jsonify
-from .authorizator import auth, token_serializer
-from .limiter import apiLimiter, handleApiPermission
+from ..extensions.auth import auth, token_serializer
+from ..extensions.limiter import limiter, handleApiPermission
 from .recorder import recordApiRequest
 
 uploaders_api = Blueprint('uploaders_api', __name__)
@@ -13,7 +13,7 @@ uploaders_api = Blueprint('uploaders_api', __name__)
 
 @uploaders_api.route('/<int:uploaderID>', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def getUploader(uploaderID):
     recordApiRequest(g.userID, "getUploader", param1=uploaderID)
     uploaderData = g.db.get(

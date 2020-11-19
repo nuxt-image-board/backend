@@ -1,25 +1,31 @@
 from flask import Flask, g, request, jsonify, escape, Blueprint
-from .authorizator import auth, token_serializer
-from .limiter import apiLimiter, handleApiPermission
+from ..extensions.auth import auth, token_serializer
+from ..extensions.limiter import limiter, handleApiPermission
+from ..extensions.cache import cache
 from .recorder import recordApiRequest
-from .cache import apiCache
 
 news_api = Blueprint('news_api', __name__)
 
 
 @news_api.route('/', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def addNews(newsID):
     if g.userPermission != 9:
         return jsonify(status=400, message="Bad request")
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     if "color" not in params.keys()\
             or "title" not in params.keys()\
             or "body" not in params.keys():
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     try:
         params = {p: g.validate(params[p]) for p in params.keys()}
     except:
@@ -42,7 +48,7 @@ def addNews(newsID):
 
 @news_api.route('/<int:newsID>', methods=["DELETE"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def deleteNews(newsID):
     if g.userPermission != 9:
         return jsonify(status=401, message="You don't have permission")
@@ -59,21 +65,31 @@ def deleteNews(newsID):
 
 @news_api.route('/list', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=1800, query_string=True)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=1800, query_string=True)
 def listNews():
     maxNews = request.args.get('count', default=50, type=int)
     datas = g.db.get(
         "SELECT * FROM data_news ORDER BY newsID DESC LIMIT %s", (maxNews,))
-    ls = [{"id": d[0], "date":d[1].strftime(
-        '%Y-%m-%d %H:%M:%S'), "color":d[2], "title":d[3], "body":d[4][:30]} for d in datas]
-    return jsonify(status=200, data=ls)
+    return jsonify(
+        status=200,
+        data=[
+            {
+                "id": d[0],
+                "date": d[1].strftime('%Y-%m-%d %H:%M:%S'),
+                "color": d[2],
+                "title": d[3],
+                "body": d[4][:30]
+            }
+            for d in datas
+        ]
+    )
 
 
 @news_api.route('/<int:newsID>', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=1800)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=1800)
 def getNews(newsID):
     resp = g.db.get(
         "SELECT * FROM data_news WHERE newsID=%s",
@@ -82,4 +98,13 @@ def getNews(newsID):
     if not len(resp):
         return jsonify(status=404, message="The news was not found")
     resp = resp[0]
-    return jsonify(status=200, data={"id": resp[0], "date": resp[1].strftime('%Y-%m-%d %H:%M:%S'), "color": resp[2], "title": resp[3], "body": resp[4]})
+    return jsonify(
+        status=200,
+        data={
+            "id": resp[0],
+            "date": resp[1].strftime('%Y-%m-%d %H:%M:%S'),
+            "color": resp[2],
+            "title": resp[3],
+            "body": resp[4]
+        }
+    )

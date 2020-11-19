@@ -1,4 +1,8 @@
 from flask import Blueprint, g, request, jsonify, escape, redirect
+from ..extensions.auth import auth, token_serializer
+from ..extensions.limiter import limiter, handleApiPermission
+from ..extensions.cache import cache
+from .recorder import recordApiRequest
 from datetime import datetime
 import hashlib
 import requests
@@ -123,7 +127,6 @@ def createAccount():
         json={"name": displayID, "password": "***REMOVED***{displayID}"}
     )
     if toyApiResp.status_code != 200:
-        print("TOYAPIの応答が正しくない！")
         return jsonify(status=500, message="Server bombed.")
     toyApiKey = toyApiResp.json()["apiKey"]
     # 新規アカウント作成
@@ -134,7 +137,6 @@ def createAccount():
         (displayID, username, password, toyApiKey)
     )
     if not resp:
-        print("ユーザーを作成できない！")
         return jsonify(status=500, message="Server bombed.")
     # 作成したユーザーID取得
     userID = g.db.get(
@@ -324,7 +326,7 @@ def loginAccountWithLine():
 
 @accounts_api.route('/<int:accountID>/connect/telegram', methods=["POST"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def connectTelegramAccount(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:
@@ -361,7 +363,7 @@ def connectTelegramAccount(accountID):
 
 @accounts_api.route('/<int:accountID>/connect/line', methods=["POST"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def connectLineAccount(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:
@@ -410,7 +412,7 @@ def connectLineAccount(accountID):
 
 @accounts_api.route('/<int:accountID>/connect/line_notify', methods=["POST"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def connectLineNotify(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:
@@ -454,8 +456,8 @@ def connectLineNotify(accountID):
 
 @accounts_api.route('/me', methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=15)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=15)
 def getSelfAccount():
     resp = g.db.get(
         """SELECT
@@ -559,8 +561,8 @@ def getSelfAccount():
 
 @accounts_api.route('/<int:accountID>', methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=5)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=5)
 def getAccount(accountID):
     resp = g.db.get(
         """SELECT userID,userDisplayID,userName,userFavorite FROM data_user
@@ -585,8 +587,8 @@ def getAccount(accountID):
 
 @accounts_api.route('/<int:accountID>/upload_history', methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=10, query_string=True)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=10, query_string=True)
 def getUploadHistory(accountID):
     '''
     REQ
@@ -643,7 +645,7 @@ def getUploadHistory(accountID):
 
 @accounts_api.route('/<int:accountID>/apiKey', methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def regenerateApiKey(accountID):
     if g.userID != accountID and g.userPermission < 9:
         return jsonify(
@@ -656,7 +658,7 @@ def regenerateApiKey(accountID):
 
 @accounts_api.route('/<int:accountID>', methods=["DELETE"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def destroyAccount(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:
@@ -682,7 +684,7 @@ def destroyAccount(accountID):
 
 @accounts_api.route('/<int:accountID>', methods=["PUT"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def editAccount(accountID):
     # 一般権限&本人の要求 もしくは 全体管理者権限を要求
     if g.userID != accountID and g.userPermission < 9:

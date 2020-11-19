@@ -17,10 +17,11 @@ from blueprints import (
     news_api, notify_api, invites_api,
     superuser_api, mylist_api, toymoney_api,
     wiki_api, mute_api, uploaders_api,
-    ranking_api,
-    apiLimiter, apiCache
+    ranking_api
 )
-import json
+from extensions import (
+    limiter, cache
+)
 
 '''
 ごちイラAPI

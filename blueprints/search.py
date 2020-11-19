@@ -1,10 +1,10 @@
 from flask import Blueprint, g, request, jsonify, escape, current_app
-from .authorizator import auth, token_serializer
-from .limiter import apiLimiter, handleApiPermission
+from ..extensions.auth import auth, token_serializer
+from ..extensions.limiter import limiter, handleApiPermission
+from ..extensions.cache import cache
 from .recorder import recordApiRequest
 from .lib.saucenao_client import SauceNaoImageSearch
 from .lib.ascii2d_client import Ascii2dImageSearch
-from .cache import apiCache
 import json
 from PIL import Image
 import imagehash
@@ -168,8 +168,8 @@ search_api = Blueprint('search_api', __name__)
 
 @search_api.route("/tag", methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7, query_string=True)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=7, query_string=True)
 def searchByTag():
     tagID = request.args.get('id', default=None, type=int)
     if not tagID:
@@ -187,8 +187,8 @@ def searchByTag():
 
 @search_api.route("/artist", methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7, query_string=True)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=7, query_string=True)
 def searchByArtist():
     artistID = request.args.get('id', default=None, type=int)
     if not artistID:
@@ -205,8 +205,8 @@ def searchByArtist():
 
 @search_api.route("/uploader", methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7, query_string=True)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=7, query_string=True)
 def searchByUploader():
     uploaderID = request.args.get('id', default=None, type=int)
     if not uploaderID:
@@ -223,8 +223,8 @@ def searchByUploader():
 
 @search_api.route("/character", methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7, query_string=True)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=7, query_string=True)
 def searchByCharacter():
     charaID = request.args.get('id', default=None, type=int)
     if not charaID:
@@ -242,8 +242,8 @@ def searchByCharacter():
 
 @search_api.route("/keyword", methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7, query_string=True)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=7, query_string=True)
 def searchByKeyword():
     keyword = request.args.get("keyword", default=None, type=str)
     if not keyword:
@@ -254,8 +254,8 @@ def searchByKeyword():
 
 @search_api.route('/all', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7, query_string=True)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=7, query_string=True)
 def searchByAll():
     whereSql = "1 = 1"
     return getSearch(whereSql, "全て")
@@ -263,7 +263,7 @@ def searchByAll():
 
 @search_api.route('/random', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def searchByRandom():
     '''
     REQ
@@ -358,7 +358,7 @@ def searchByRandom():
 
 @search_api.route('/image/saucenao', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def searchByImageAtSauceNao():
     if g.userPermission not in [0, 9]:
         return jsonify(status=400, message="Bad request")
@@ -393,7 +393,7 @@ def searchByImageAtSauceNao():
 
 @search_api.route('/image/ascii2d', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def searchByImageAtAscii2d():
     if g.userPermission not in [0, 9]:
         return jsonify(status=400, message="Bad request")
@@ -431,7 +431,7 @@ def searchByImageAtAscii2d():
 
 @search_api.route('/image', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def searchByImage():
     if g.userPermission not in [0, 9]:
         return jsonify(status=400, message="Bad request")
@@ -525,8 +525,8 @@ def searchByImage():
 
 @search_api.route("/multiple/tag", methods=["GET"])
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
-@apiCache.cached(timeout=7, query_string=True)
+@limiter.limit(handleApiPermission)
+@cache.cached(timeout=7, query_string=True)
 def searchByMultipleTag():
     # パラメータの確認
     tagID = request.args.get('id', default=None, type=str)

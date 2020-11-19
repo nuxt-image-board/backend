@@ -1,6 +1,6 @@
 from flask import Blueprint, g, request, jsonify, escape
-from .authorizator import auth, token_serializer
-from .limiter import apiLimiter, handleApiPermission
+from ..extensions.auth import auth, token_serializer
+from ..extensions.limiter import limiter, handleApiPermission
 from .recorder import recordApiRequest
 import requests
 
@@ -14,7 +14,7 @@ TOYMONEY_ENDPOINT = "http://127.0.0.1:7070"
     strict_slashes=False
 )
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def torimochi(text):
     # 別サービスで使う認証トークンをDBから取ってくる
     toyApiKey = g.db.get(

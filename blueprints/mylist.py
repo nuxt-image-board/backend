@@ -1,6 +1,6 @@
 from flask import Flask, g, request, jsonify, Blueprint, current_app
 from .authorizator import auth
-from .limiter import apiLimiter, handleApiPermission
+from ..extensions.limiter import limiter, handleApiPermission
 from .recorder import recordApiRequest
 
 mylist_api = Blueprint('mylist_api', __name__)
@@ -26,7 +26,7 @@ def getMylistCountDict(illustIDs):
 
 @mylist_api.route('/', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def createMylist():
     if g.userPermission not in [0, 9]:
         return jsonify(status=400, message='Bad request')
@@ -60,7 +60,7 @@ def createMylist():
 
 @mylist_api.route('/<int:mylistID>', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def getMylist(mylistID):
     if not g.db.has("info_mylist", "mylistID=%s", (mylistID,)):
         return jsonify(status=404, message="The mylist was not exists")
@@ -153,7 +153,7 @@ def getMylist(mylistID):
 
 @mylist_api.route('/<int:mylistID>', methods=["PUT"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def editMylist(mylistID):
     if g.userPermission not in [0, 9]:
         return jsonify(status=400, message='Bad request')
@@ -228,7 +228,7 @@ def editMylist(mylistID):
 
 @mylist_api.route('/<int:mylistID>/find', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def findInMylist(mylistID):
     ''' マイリスト内に指定されたイラストが含まれているかを調べる '''
     if g.userPermission not in [0, 9]:
@@ -243,7 +243,7 @@ def findInMylist(mylistID):
 
 @mylist_api.route('/<int:mylistID>/finds', methods=["GET", "POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def findsInMylist(mylistID):
     ''' マイリスト内に指定されたイラストが含まれているかを調べる '''
     if g.userPermission not in [0, 9]:
@@ -270,7 +270,7 @@ def findsInMylist(mylistID):
 
 @mylist_api.route('/list', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def listMylist():
     userID = request.args.get('userID', default=g.userID, type=int)
     userName = g.db.get(

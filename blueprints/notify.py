@@ -1,6 +1,6 @@
 from flask import Flask, g, request, jsonify, Blueprint, current_app
 from .authorizator import auth
-from .limiter import apiLimiter, handleApiPermission
+from ..extensions.limiter import limiter, handleApiPermission
 from .recorder import recordApiRequest
 from .lib.onesignal_client import OneSignalWrappedClient
 
@@ -9,7 +9,7 @@ notify_api = Blueprint('notify_api', __name__)
 
 @notify_api.route('/setting/line', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def initLineNotify():
     """
     LINE Notifyを使う
@@ -19,14 +19,14 @@ def initLineNotify():
 
 @notify_api.route('/setting/twitter', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def initTwitterNotify():
     return jsonify(status=503, message="Not implemented.")
 
 
 @notify_api.route('/setting/onesignal', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def initOneSignalNotify():
     """
     サイト内で取得した OneSignalのPlayerIDをPOSTで送ってくる。
@@ -60,7 +60,7 @@ def initOneSignalNotify():
 
 @notify_api.route('/setting/onesignal', methods=["DELETE"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def resetOneSignalNotify():
     resp = g.db.edit(
         "UPDATE data_user SET userOneSignalID=NULL WHERE userID=%s",
@@ -74,7 +74,7 @@ def resetOneSignalNotify():
 
 @notify_api.route('/register', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def addNotify():
     params = request.get_json()
     if not params:
@@ -120,7 +120,7 @@ def addNotify():
 
 @notify_api.route('/unregister', methods=["POST"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def deleteNotify():
     params = request.get_json()
     if not params:
@@ -160,7 +160,7 @@ def deleteNotify():
 
 @notify_api.route('/find', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def findNotify():
     '''方法も指定して通知が設定されているか確認'''
     targetType = request.args.get('type', default=None, type=int)
@@ -188,7 +188,7 @@ def findNotify():
 
 @notify_api.route('/finds', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def findsNotify():
     '''通知が設定されているか確認'''
     targetType = request.args.get('type', default=None, type=int)
@@ -220,7 +220,7 @@ def findsNotify():
 
 @notify_api.route('/list', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def listNotify():
     pageID = request.args.get('page', default=1, type=int)
     per_page = request.args.get('count', default=50, type=int)
@@ -264,7 +264,7 @@ def listNotify():
 
 @notify_api.route('/<int:notifyID>', methods=["GET"], strict_slashes=False)
 @auth.login_required
-@apiLimiter.limit(handleApiPermission)
+@limiter.limit(handleApiPermission)
 def getNotify(notifyID):
     resp = g.db.get(
         "SELECT * FROM data_notify WHERE notifyID=%s",
