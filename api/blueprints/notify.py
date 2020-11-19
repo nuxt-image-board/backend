@@ -1,8 +1,8 @@
 from flask import Flask, g, request, jsonify, Blueprint, current_app
 from ..extensions.httpauth import auth
-from ..extensions.limiter import limiter, handleApiPermission
+from ..extensions import limiter, handleApiPermission
 from .recorder import recordApiRequest
-from .lib.onesignal_client import OneSignalWrappedClient
+from ..scraper_lib.onesignal_client import OneSignalWrappedClient
 
 notify_api = Blueprint('notify_api', __name__)
 

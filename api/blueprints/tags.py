@@ -1,6 +1,6 @@
 from flask import Blueprint, g, request, jsonify, escape
-from ..extensions.auth import auth, token_serializer
-from ..extensions.limiter import limiter, handleApiPermission
+from ..extensions import auth, token_serializer
+from ..extensions import limiter, handleApiPermission
 from .recorder import recordApiRequest
 
 tags_api = Blueprint('tags_api', __name__)

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, g, jsonify
-from ..extensions.auth import auth, token_serializer
-from ..extensions.limiter import limiter, handleApiPermission
+from ..extensions import auth, token_serializer
+from ..extensions import limiter, handleApiPermission
 from .recorder import recordApiRequest
 
 uploaders_api = Blueprint('uploaders_api', __name__)

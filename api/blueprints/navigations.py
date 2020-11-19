@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, g
-from ..extensions.auth import auth, token_serializer
-from ..extensions.limiter import limiter, handleApiPermission
-from ..extensions.cache import cache
+from ..extensions import auth, token_serializer
+from ..extensions import limiter, handleApiPermission
+from ..extensions import cache
 from .recorder import recordApiRequest
 
 navigations_api = Blueprint('navigations_api', __name__)

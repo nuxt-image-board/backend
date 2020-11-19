@@ -1,19 +1,19 @@
 from flask import Blueprint, request, g, jsonify
-from ..extensions.auth import auth, token_serializer
-from ..extensions.limiter import limiter, handleApiPermission
+from ..extensions import auth, token_serializer
+from ..extensions import limiter, handleApiPermission
 from .recorder import recordApiRequest
 
-characters_api = Blueprint('characters_api', __name__)
+forum_api = Blueprint('forum_api', __name__)
 
 #
-# キャラ関連
+# 掲示板関連
 #
 
 
-@characters_api.route('/', methods=["POST"], strict_slashes=False)
+@forum_api.route('/', methods=["POST"], strict_slashes=False)
 @auth.login_required
 @limiter.limit(handleApiPermission)
-def addCharacter():
+def addThread():
     params = request.get_json()
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")
@@ -22,7 +22,7 @@ def addCharacter():
     params = {p: g.validate(params[p]) for p in params.keys()}
     charaName = params.get('charaName')
     if g.db.has("info_tag", "tagName=%s", (charaName,)):
-        return jsonify(status=409, message="The character is already exist.")
+        return jsonify(status=409, message="The Thread is already exist.")
     charaDescription = params.get('charaDescription', None)
     resp = g.db.edit(
         "INSERT INTO `info_tag`(`userID`,`tagName`,`tagDescription`,`tagNsfw`,`tagType`) VALUES (%s,%s,%s,0,1)",
@@ -37,17 +37,17 @@ def addCharacter():
         return jsonify(status=500, message="Server bombed.")
 
 
-@characters_api.route('/<int:charaID>', methods=["DELETE"], strict_slashes=False)
+@forum_api.route('/<int:charaID>', methods=["DELETE"], strict_slashes=False)
 @auth.login_required
 @limiter.limit(handleApiPermission)
-def removeCharacter(charaID):
+def removeThread(charaID):
     if not g.db.has("info_tag", "tagID=%s", (charaID,)):
-        return jsonify(status=404, message="Specified character was not found")
+        return jsonify(status=404, message="Specified Thread was not found")
     illustCount = g.db.get(
         "SELECT COUNT(tagID) FROM data_tag WHERE tagID =%s", (charaID,)
     )[0][0]
     if illustCount != 0:
-        return jsonify(status=409, message="The character is locked by reference.")
+        return jsonify(status=409, message="The Thread is locked by reference.")
     resp = g.db.edit("DELETE FROM info_tag WHERE tagID = %s", (charaID,))
     if resp:
         return jsonify(status=200, message="Delete succeed.")
@@ -55,15 +55,15 @@ def removeCharacter(charaID):
         return jsonify(status=500, message="Server bombed.")
 
 
-@characters_api.route('/<int:charaID>', methods=["GET"], strict_slashes=False)
+@forum_api.route('/<int:charaID>', methods=["GET"], strict_slashes=False)
 @auth.login_required
 @limiter.limit(handleApiPermission)
-def getCharacter(charaID):
+def getThread(charaID):
     charaData = g.db.get(
         "SELECT * FROM info_tag WHERE tagID=%s AND tagType=1", (charaID,)
     )
     if len(charaData) < 1:
-        return jsonify(status=404, message="Specified character was not found")
+        return jsonify(status=404, message="Specified Thread was not found")
     charaData = charaData[0]
     # print(charaData)
     return jsonify(status=200, data={
@@ -74,10 +74,10 @@ def getCharacter(charaID):
     })
 
 
-@characters_api.route('/<int:charaID>', methods=["PUT"], strict_slashes=False)
+@forum_api.route('/<int:charaID>', methods=["PUT"], strict_slashes=False)
 @auth.login_required
 @limiter.limit(handleApiPermission)
-def editCharacter(charaID):
+def editThread(charaID):
     params = request.get_json()
     if not params:
         return jsonify(status=400, message="Request parameters are not satisfied.")

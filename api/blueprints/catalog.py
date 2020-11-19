@@ -1,7 +1,7 @@
 from flask import Blueprint, request, g, jsonify
-from ..extensions.auth import auth, token_serializer
-from ..extensions.limiter import limiter, handleApiPermission
-from ..extensions.cache import cache
+from ..extensions import auth, token_serializer
+from ..extensions import limiter, handleApiPermission
+from ..extensions import cache
 from .recorder import recordApiRequest
 
 catalog_api = Blueprint('catalog_api', __name__)

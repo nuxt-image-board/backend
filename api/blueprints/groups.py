@@ -1,6 +1,6 @@
 from flask import Blueprint, request, g, jsonify
-from ..extensions.auth import auth, token_serializer
-from ..extensions.limiter import limiter, handleApiPermission
+from ..extensions import auth, token_serializer
+from ..extensions import limiter, handleApiPermission
 from .recorder import recordApiRequest
 
 characters_api = Blueprint('characters_api', __name__)

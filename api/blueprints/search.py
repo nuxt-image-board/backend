@@ -1,10 +1,10 @@
 from flask import Blueprint, g, request, jsonify, escape
-from ..extensions.auth import auth, token_serializer
-from ..extensions.limiter import limiter, handleApiPermission
-from ..extensions.cache import cache
+from ..extensions import auth, token_serializer
+from ..extensions import limiter, handleApiPermission
+from ..extensions import cache
 from .recorder import recordApiRequest
-from .lib.saucenao_client import SauceNaoImageSearch
-from .lib.ascii2d_client import Ascii2dImageSearch
+from ..scraper_lib.saucenao_client import SauceNaoImageSearch
+from ..scraper_lib.ascii2d_client import Ascii2dImageSearch
 import json
 from PIL import Image
 import imagehash

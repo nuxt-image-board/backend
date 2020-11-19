@@ -10,7 +10,7 @@ from general import (
     error_ratelimit,
     error_server_bombed
 )
-from blueprints import (
+from api.blueprints import (
     accounts_api, artists_api, arts_api,
     catalog_api, characters_api, navigations_api,
     search_api, tags_api, scrape_api,
@@ -19,7 +19,7 @@ from blueprints import (
     wiki_api, mute_api, uploaders_api,
     ranking_api
 )
-from extensions import (
+from api.extensions import (
     limiter, cache
 )
 from dotenv import load_dotenv

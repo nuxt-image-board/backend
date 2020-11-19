@@ -1,8 +1,8 @@
 from flask import Blueprint, g, request, jsonify, escape, current_app
 from datetime import datetime, timedelta
-from ..extensions.auth import auth, token_serializer
-from ..extensions.limiter import limiter, handleApiPermission
-from ..extensions.cache import cache
+from ..extensions import auth, token_serializer
+from ..extensions import limiter, handleApiPermission
+from ..extensions import cache
 from .recorder import recordApiRequest
 import traceback
 import calendar
