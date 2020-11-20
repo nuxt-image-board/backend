@@ -1,9 +1,12 @@
 from flask import g
 from flask_httpauth import HTTPTokenAuth
 from itsdangerous import JSONWebSignatureSerializer as Serializer
+from dotenv import load_dotenv
+from os import environ
 
+load_dotenv(verbose=True, override=True)
 auth = HTTPTokenAuth('Bearer')
-token_serializer = Serializer("***REMOVED***")
+token_serializer = Serializer(environ.get('SALT_JWT'))
 
 
 @auth.verify_token

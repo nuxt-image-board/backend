@@ -150,8 +150,8 @@ def findArticle():
         param2=targetID
     )
     resp = g.db.get(
-        "SELECT articleID,revision FROM data_wiki WHERE targetType=%s AND targetID=%s"
-        + " ORDER BY revision DESC LIMIT 1",
+        """SELECT articleID,revision FROM data_wiki
+        WHERE targetType=%s AND targetID=%s ORDER BY revision DESC LIMIT 1""",
         (targetType, targetID,)
     )
     if len(resp) > 0:

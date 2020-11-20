@@ -1,10 +1,14 @@
 from flask import Blueprint, g, request, jsonify, escape
-from ..extensions import auth, token_serializer
+from ..extensions import auth
 from ..extensions import limiter, handleApiPermission
 from .recorder import recordApiRequest
+from os import environ
+from dotenv import load_dotenv
 from hashids import Hashids
 from time import time
 
+load_dotenv(verbose=True, override=True)
+SALT_INVITE = environ.get("SALT_INVITE")
 invites_api = Blueprint('invites_api', __name__)
 
 

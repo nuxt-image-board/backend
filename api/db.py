@@ -41,7 +41,7 @@ class SQLHandler(object):
 
     def has(self, tableName, condition, data=None):
         d = self.get(
-            "SELECT 'T' FROM {tableName} WHERE {condition}",
+            f"SELECT 'T' FROM {tableName} WHERE {condition}",
             data
         )
         if len(d) > 0:

@@ -1,6 +1,6 @@
-from flask import Blueprint, g, request, jsonify, escape, current_app
+from flask import Blueprint, g, request, jsonify, current_app
 from datetime import datetime, timedelta
-from ..extensions import auth, token_serializer
+from ..extensions import auth
 from ..extensions import limiter, handleApiPermission
 from ..extensions import cache
 from .recorder import recordApiRequest
