@@ -24,7 +24,8 @@ NOTIFY_CHANNEL_ID = environ.get('AUTH_LINE_NOTIFY_ID')
 NOTIFY_CHANNEL_SECRET = environ.get('AUTH_LINE_NOTIFY_SECRET')
 NOTIFY_ENDPOINT = environ.get('AUTH_LINE_NOTIFY_ENDPOINT')
 NOTIFY_REDIRECT_URI_CONNECT = environ.get('AUTH_LINE_NOTIFY_CONNECT')
-TOYMONEY_ENDPOINT = environ.get('API_TOYMONEY_ENDPOINT')
+TOYMONEY_ENDPOINT = environ.get('TOYMONEY_ENDPOINT')
+TOYMONEY_PASSWORD_HEAD = environ.get('TOYMONEY_PASSWORD_HEAD')
 
 
 def generateApiKey(accountID):
@@ -96,6 +97,7 @@ def createAccount():
     password = SALT_PASS+password
     password = hashlib.sha256(password.encode("utf8")).hexdigest()
     # ToyMoneyServerにリクエストする
+    # TODO: fix f-string!!
     toyApiResp = requests.post(
         TOYMONEY_ENDPOINT + "/users/create",
         json={"name": displayID, "password": "***REMOVED***{displayID}"}
