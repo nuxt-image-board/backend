@@ -1,7 +1,7 @@
 from flask import Flask, g, request, jsonify, Blueprint, current_app
-from ..extensions import auth
-from ..extensions import limiter, handleApiPermission
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, record
+)
 
 mute_api = Blueprint('mute_api', __name__)
 
@@ -25,7 +25,7 @@ def addMute():
             status=400,
             message="Request parameters are not satisfied."
         )
-    recordApiRequest(
+    record(
         g.userID,
         "addMute",
         param1=muteTargetType,
@@ -66,7 +66,7 @@ def removeMute():
             status=400,
             message="Request parameters are not satisfied."
         )
-    recordApiRequest(
+    record(
         g.userID,
         "removeMute",
         param1=muteTargetType,
@@ -77,7 +77,7 @@ def removeMute():
         "targetType=%s AND targetID=%s",
         (muteTargetType, muteTargetId)
     ):
-        return jsonify(status=400, message="the mute was not found")
+        return jsonify(status=400, message="The mute was not found")
     resp = g.db.edit(
         "DELETE FROM data_mute"
         + " WHERE targetType=%s AND targetID=%s AND userID=%s",
@@ -92,7 +92,7 @@ def removeMute():
 @auth.login_required
 @limiter.limit(handleApiPermission)
 def listMute():
-    recordApiRequest(
+    record(
         g.userID,
         "listMute",
         param1=g.userID

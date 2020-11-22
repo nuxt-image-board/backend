@@ -1,7 +1,8 @@
 from flask import Blueprint, request, g, jsonify
-from ..extensions import auth, token_serializer
-from ..extensions import limiter, handleApiPermission
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, record
+)
+
 
 artists_api = Blueprint('artists_api', __name__)
 
@@ -58,7 +59,7 @@ def addArtist():
             "SELECT artistID FROM info_artist WHERE artistName = %s", (
                 artistName,)
         )[0][0]
-        recordApiRequest(userID, "addArtist", param1=createdID)
+        record(userID, "addArtist", param1=createdID)
         return jsonify(status=201, message="Created", artistID=createdID)
     else:
         return jsonify(status=500, message="Server bombed.")
@@ -89,7 +90,7 @@ def removeArtist(artistID):
     resp = g.db.edit(
         "DELETE FROM info_artist WHERE artistID = %s", (artistID,))
     if resp:
-        recordApiRequest(g.userID, "removeArtist", param1=artistID)
+        record(g.userID, "removeArtist", param1=artistID)
         return jsonify(status=200, message="Delete succeed.")
     else:
         return jsonify(status=500, message="Server bombed.")
@@ -99,7 +100,7 @@ def removeArtist(artistID):
 @auth.login_required
 @limiter.limit(handleApiPermission)
 def getArtist(artistID):
-    recordApiRequest(g.userID, "getArtist", param1=artistID)
+    record(g.userID, "getArtist", param1=artistID)
     artistData = g.db.get(
         "SELECT * FROM info_artist WHERE artistID = %s", (artistID,)
     )
@@ -155,7 +156,7 @@ def editArtist(artistID):
             "UPDATE `info_artist` SET `%s`=%s WHERE artistID=%s" % (p),
             (params[p], artistID,)
         )
-        recordApiRequest(g.userID, "editArtist", param1=p, param2=params[p])
+        record(g.userID, "editArtist", param1=p, param2=params[p])
         if not resp:
             return jsonify(status=500, message="Server bombed.")
     return jsonify(status=200, message="Update succeed.")

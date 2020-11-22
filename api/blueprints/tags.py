@@ -1,7 +1,7 @@
 from flask import Blueprint, g, request, jsonify, escape
-from ..extensions import auth, token_serializer
-from ..extensions import limiter, handleApiPermission
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, record
+)
 
 tags_api = Blueprint('tags_api', __name__)
 
@@ -47,7 +47,9 @@ def addTag():
     else:
         nsfw = "0"
     resp = g.db.edit(
-        "INSERT INTO `info_tag`(`userID`,`tagType`,`tagName`,`tagDescription`,`tagNsfw`) VALUES (%s,%s,%s,%s,%s)",
+        """INSERT INTO info_tag
+        (userID,tagType,tagName,tagDescription,tagNsfw)
+        VALUES (%s,%s,%s,%s,%s)""",
         (g.userID, tagType, tagName, tagDescription, nsfw)
     )
     if resp:

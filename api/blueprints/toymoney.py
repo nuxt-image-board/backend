@@ -1,7 +1,7 @@
 from flask import Blueprint, g, request, jsonify, escape
-from ..extensions import auth, token_serializer
-from ..extensions import limiter, handleApiPermission
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, record
+)
 import requests
 from os import environ
 from dotenv import load_dotenv

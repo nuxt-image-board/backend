@@ -1,7 +1,7 @@
 from flask import Flask, g, request, jsonify, Blueprint, current_app
-from ..extensions import auth
-from ..extensions import limiter, handleApiPermission
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, record
+)
 
 mylist_api = Blueprint('mylist_api', __name__)
 
@@ -36,10 +36,16 @@ def createMylist():
     )
     if mylistCount:
         if mylistCount[0][0] > 9:
-            return jsonify(status=400, message="You have too many mylists, delete one and try again.")
+            return jsonify(
+                status=400,
+                message="You have too many mylists, delete one and try again."
+            )
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     name = params.get("name", "")
     description = params.get("description", "")
     if not name:
@@ -98,16 +104,16 @@ def getMylist(mylistID):
     if extra_page > 0:
         pages += 1
     illusts = g.db.get(
-        "SELECT data_illust.illustID, data_illust.artistID, illustName, "
-        + "illustDescription, illustDate, illustPage, illustLike, "
-        + "illustOriginUrl, illustOriginSite, illustNsfw, artistName, "
-        + "illustExtension, mylistAddedDate, mylistID FROM data_illust "
-        + "INNER JOIN info_artist ON "
-        + "data_illust.artistID = info_artist.artistID "
-        + "INNER JOIN data_mylist ON data_illust.illustID = data_mylist.illustID "
-        + "WHERE mylistID=%s "
-        + f"ORDER BY {sortMethod} {order} "
-        + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        f"""SELECT data_illust.illustID, data_illust.artistID, illustName,
+        illustDescription, illustDate, illustPage, illustLike,
+        illustOriginUrl, illustOriginSite, illustNsfw, artistName,
+        illustExtension, mylistAddedDate, mylistID FROM data_illust
+        INNER JOIN info_artist ON
+        data_illust.artistID = info_artist.artistID
+        INNER JOIN data_mylist ON data_illust.illustID = data_mylist.illustID
+        WHERE mylistID=%s
+        ORDER BY {sortMethod} {order}
+        LIMIT {per_page} OFFSET {per_page*(pageID-1)}""",
         (mylistID, )
     )
     if not len(illusts):
@@ -115,7 +121,7 @@ def getMylist(mylistID):
     illustIDs = [i[0] for i in illusts]
     # マイリストされた回数を気合で取ってくる
     mylistDict = getMylistCountDict(illustIDs)
-    recordApiRequest(
+    record(
         g.userID,
         "getMylist",
         param1=per_page,
@@ -159,7 +165,10 @@ def editMylist(mylistID):
         return jsonify(status=400, message='Bad request')
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     if not g.db.has("info_mylist", "mylistID=%s", (mylistID,)):
         return jsonify(status=404, message="The mylist was not exists")
     # マイリストの所有者を確認
@@ -194,7 +203,8 @@ def editMylist(mylistID):
     if action and illustID:
         # マイリスト内のデータ存在確認
         isExist = g.db.get(
-            "SELECT illustID FROM data_mylist WHERE illustID=%s AND mylistID=%s",
+            """SELECT illustID FROM data_mylist
+            WHERE illustID=%s AND mylistID=%s""",
             (illustID, mylistID)
         )
         # マイリストに追加
@@ -210,7 +220,10 @@ def editMylist(mylistID):
         # マイリストから削除
         else:
             if not isExist:
-                return jsonify(status=400, message="Already deleted from the list")
+                return jsonify(
+                    status=400,
+                    message="Already deleted from the list"
+                )
             resp = g.db.edit(
                 "DELETE FROM data_mylist WHERE mylistID=%s AND illustID=%s",
                 (mylistID, illustID)
@@ -218,7 +231,8 @@ def editMylist(mylistID):
             if not resp:
                 return jsonify(status=500, message="Server bombed.")
     resp = g.db.edit(
-        "UPDATE info_mylist SET mylistUpdatedDate = CURRENT_TIMESTAMP() WHERE mylistID=%s",
+        """UPDATE info_mylist SET mylistUpdatedDate = CURRENT_TIMESTAMP()
+        WHERE mylistID=%s""",
         (mylistID, )
     )
     if not resp:
@@ -226,7 +240,11 @@ def editMylist(mylistID):
     return jsonify(status=200, message="update complete")
 
 
-@mylist_api.route('/<int:mylistID>/find', methods=["GET"], strict_slashes=False)
+@mylist_api.route(
+    '/<int:mylistID>/find',
+    methods=["GET"],
+    strict_slashes=False
+)
 @auth.login_required
 @limiter.limit(handleApiPermission)
 def findInMylist(mylistID):
@@ -234,14 +252,25 @@ def findInMylist(mylistID):
     if g.userPermission not in [0, 9]:
         return jsonify(status=400, message='Bad request')
     if not g.db.has("info_mylist", "mylistID=%s", (mylistID,)):
-        return jsonify(status=404, message="The mylist was not exists")
+        return jsonify(
+            status=404,
+            message="The mylist was not exists"
+        )
     targetID = request.args.get('id', default=1, type=int)
-    if g.db.has("data_mylist", "mylistID=%s AND illustID=%s", (mylistID, targetID,)):
+    if g.db.has(
+        "data_mylist",
+        "mylistID=%s AND illustID=%s",
+        (mylistID, targetID,)
+    ):
         return jsonify(status=200, message="The illust was found in the list")
     return jsonify(status=404, message="The illust was not found in the list")
 
 
-@mylist_api.route('/<int:mylistID>/finds', methods=["GET", "POST"], strict_slashes=False)
+@mylist_api.route(
+    '/<int:mylistID>/finds',
+    methods=["GET", "POST"],
+    strict_slashes=False
+)
 @auth.login_required
 @limiter.limit(handleApiPermission)
 def findsInMylist(mylistID):
@@ -259,10 +288,17 @@ def findsInMylist(mylistID):
         return jsonify(status=400, message="You don't have permission")
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     illustIDs = params.get("ids", [])
     findResult = {
-        i: g.db.has("data_mylist", "illustID=%s AND mylistID=%s", (i, mylistID))
+        i: g.db.has(
+            "data_mylist",
+            "illustID=%s AND mylistID=%s",
+            (i, mylistID)
+        )
         for i in illustIDs
     }
     return jsonify(status=200, message="ok", data=findResult)
@@ -295,7 +331,7 @@ def listMylist():
             + "ORDER BY mylistID DESC",
             (userID,)
         )
-    recordApiRequest(
+    record(
         g.userID,
         "listMylist",
         param1=userID,

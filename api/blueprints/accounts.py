@@ -1,8 +1,9 @@
 from flask import Blueprint, g, request, jsonify, escape, redirect
-from ..extensions import auth, token_serializer
-from ..extensions import limiter, handleApiPermission
-from ..extensions import cache
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, token_serializer,
+    limiter, handleApiPermission,
+    cache, record
+)
 from datetime import datetime
 import hashlib
 import requests
@@ -51,7 +52,10 @@ def generateApiKey(accountID):
 def createAccount():
     # Web管理者権限以上を要求
     if g.userPermission < 5:
-        return jsonify(status=403, message="You don't have enough permissions.")
+        return jsonify(
+            status=403,
+            message="You don't have enough permissions."
+        )
     # 入力チェック
     params = request.get_json()
     if not params:
@@ -138,9 +142,9 @@ def createAccount():
         (username+"のマイリスト", "", userID)
     )
     # 記録する
-    recordApiRequest(g.userID, "createAccount", param1=userID)
-    recordApiRequest(g.userID, "generateApiKey", param1=userID)
-    recordApiRequest(g.userID, "createMylist", param1=userID)
+    record(g.userID, "createAccount", param1=userID)
+    record(g.userID, "generateApiKey", param1=userID)
+    record(g.userID, "createMylist", param1=userID)
     return jsonify(
         status=201,
         message="created",
@@ -327,7 +331,7 @@ def connectTelegramAccount(accountID):
     )
     if not resp:
         return jsonify(status=500, message="Server bombed.")
-    recordApiRequest(g.userID, "connectTelegramAccount", param1=accountID)
+    record(g.userID, "connectTelegramAccount", param1=accountID)
     return jsonify(status=200, message="ok")
 
 
@@ -376,7 +380,7 @@ def connectLineAccount(accountID):
     )
     if not resp:
         return jsonify(status=500, message="Server bombed.")
-    recordApiRequest(g.userID, "connectLineAccount", param1=accountID)
+    record(g.userID, "connectLineAccount", param1=accountID)
     return jsonify(status=200, message="ok")
 
 
@@ -420,7 +424,7 @@ def connectLineNotify(accountID):
     )
     if not resp:
         return jsonify(status=500, message="Server bombed.")
-    recordApiRequest(g.userID, "connectLineNotify", param1=accountID)
+    record(g.userID, "connectLineNotify", param1=accountID)
     return jsonify(status=200, message="ok")
 
 
@@ -497,7 +501,7 @@ def getSelfAccount():
         "SELECT MIN(mylistID) FROM info_mylist WHERE userID = %s",
         (g.userID,)
     )[0][0]
-    recordApiRequest(g.userID, "getAccount", param1=g.userID)
+    record(g.userID, "getAccount", param1=g.userID)
     return jsonify(
         status=200,
         message="ok",
@@ -542,7 +546,7 @@ def getAccount(accountID):
     if not resp or accountID in [0, 1, 2]:
         return jsonify(status=404, message="The account data was not found.")
     resp = resp[0]
-    recordApiRequest(g.userID, "getAccount", param1=accountID)
+    record(g.userID, "getAccount", param1=accountID)
     return jsonify(
         status=200,
         message="ok",
@@ -593,7 +597,16 @@ def getUploadHistory(accountID):
         + f" ORDER BY {sortMethod} {order}"
         + f" LIMIT {per_page} OFFSET {per_page*(pageID-1)}"
     )
-    recordApiRequest(g.userID, "getUploadHistory", param1=accountID)
+    record(g.userID, "getUploadHistory", param1=accountID)
+    contents = [
+        {
+            "uploadID": d[0],
+            "started": d[1].strftime('%Y-%m-%d %H:%M:%S') if d[1] else None,
+            "finished": d[2].strftime('%Y-%m-%d %H:%M:%S') if d[2] else None,
+            "status": d[3],
+            "illustID": d[4]
+        } for d in resp
+    ]
     return jsonify(
         status=200,
         message="ok",
@@ -602,13 +615,7 @@ def getUploadHistory(accountID):
             "count": uploadCount,
             "current": pageID,
             "pages": pages,
-            "contents": [{
-                "uploadID": d[0],
-                "started": d[1].strftime('%Y-%m-%d %H:%M:%S') if d[1] else None,
-                "finished": d[2].strftime('%Y-%m-%d %H:%M:%S') if d[2] else None,
-                "status": d[3],
-                "illustID": d[4]
-            } for d in resp]
+            "contents": contents
         }
     )
 
@@ -648,7 +655,7 @@ def destroyAccount(accountID):
     )
     if not resp:
         return jsonify(status=500, message="Server bombed.")
-    recordApiRequest(g.userID, "destroyAccount", param1=accountID)
+    record(g.userID, "destroyAccount", param1=accountID)
     return jsonify(status=200, message="ok")
 
 
@@ -708,7 +715,7 @@ def editAccount(accountID):
         )
         if not resp:
             return jsonify(status=500, message="Server bombed.")
-        recordApiRequest(
+        record(
             g.userID,
             "editAccount",
             param1=accountID,

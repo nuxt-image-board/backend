@@ -1,13 +1,10 @@
 from flask import Blueprint, g, request, jsonify, current_app
 from datetime import datetime, timedelta
-from ..extensions import auth
-from ..extensions import limiter, handleApiPermission
-from ..extensions import cache
-from .recorder import recordApiRequest
-import traceback
+from ..extensions import (
+    auth, limiter, handleApiPermission, cache, record
+)
 import calendar
-import json
-import os
+
 
 ranking_api = Blueprint('ranking_api', __name__)
 
@@ -37,10 +34,10 @@ def getMylistCountDict(illustIDs):
 def getMylistedDict(illustIDs):
     illustKey = ",".join([str(i) for i in illustIDs])
     mylistedData = g.db.get(
-        "SELECT illustID FROM data_mylist "
-        + "WHERE mylistID IN "
-        + f"(SELECT mylistID FROM info_mylist WHERE userID={g.userID}) "
-        + f"AND illustID IN ({illustKey})"
+        f"""SELECT illustID FROM data_mylist
+        WHERE mylistID IN
+        (SELECT mylistID FROM info_mylist WHERE userID={g.userID})
+        AND illustID IN ({illustKey})"""
     )
     mylistedData = [i[0] for i in mylistedData]
     mylistedDict = {

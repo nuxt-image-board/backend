@@ -69,7 +69,6 @@ def app_after_request(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['X-Download-Options'] = 'noopen'
-    # response.headers['Content-Security-Policy'] = 'default-src \'self\' ***REMOVED***'
     g.db.close()
     return response
 

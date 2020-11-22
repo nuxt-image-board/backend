@@ -1,8 +1,8 @@
 from flask import Flask, g, request, jsonify, escape, Blueprint
-from ..extensions import auth
-from ..extensions import limiter, handleApiPermission
-from ..extensions import cache
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, cache, record
+)
+
 
 news_api = Blueprint('news_api', __name__)
 
@@ -33,14 +33,16 @@ def addNews(newsID):
     if g.userPermission != 9:
         return jsonify(status=401, message="You don't have permission")
     resp = g.db.edit(
-        "INSERT INTO data_user (newsColor,newsTitle, newsBody) VALUES (%s,%s,%s)",
+        """INSERT INTO data_user
+        (newsColor,newsTitle, newsBody)
+        VALUES (%s,%s,%s)""",
         (params["color"], params["title"], params["body"])
     )
     if resp:
         createdID = g.db.get(
             "SELECT MAX(newsID) FROM data_news"
         )[0][0]
-        recordApiRequest(g.userID, "addNews", param1=createdID)
+        record(g.userID, "addNews", param1=createdID)
         return jsonify(status=201, message="Created", artistID=createdID)
     else:
         return jsonify(status=500, message="Server bombed.")
@@ -57,7 +59,7 @@ def deleteNews(newsID):
         (newsID,)
     )
     if resp:
-        recordApiRequest(g.userID, "removeNews", param1=newsID)
+        record(g.userID, "removeNews", param1=newsID)
         return jsonify(status=200, message="Delete succeed.")
     else:
         return jsonify(status=500, message="Server bombed.")

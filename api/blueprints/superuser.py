@@ -1,8 +1,8 @@
 from flask import Flask, g, request, jsonify, Blueprint
-from ..extensions import auth, token_serializer
-from ..extensions import limiter, handleApiPermission
-from .recorder import recordApiRequest
-import subprocess
+from ..extensions import (
+    auth, limiter, handleApiPermission, record
+)
+
 
 superuser_api = Blueprint('superuser_api', __name__)
 

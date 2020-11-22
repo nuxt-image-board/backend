@@ -2,7 +2,7 @@ from flask import g
 from datetime import datetime
 
 
-def recordApiRequest(
+def record(
     issuerUserID, logType, message=None,
     param1=None, param2=None, param3=None
 ):

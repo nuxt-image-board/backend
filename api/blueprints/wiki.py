@@ -1,7 +1,8 @@
 from flask import Blueprint, request, g, jsonify
-from ..extensions import auth, token_serializer
-from ..extensions import limiter, handleApiPermission
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, record
+)
+
 
 wiki_api = Blueprint('wiki_api', __name__)
 
@@ -143,7 +144,7 @@ def findArticle():
     '''記事が存在するか確認'''
     targetType = request.args.get('type', default=None, type=int)
     targetID = request.args.get('id', default=None, type=int)
-    recordApiRequest(
+    record(
         g.userID,
         "findArticle",
         param1=targetType,

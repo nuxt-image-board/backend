@@ -1,8 +1,7 @@
 from flask import Blueprint, request, g, jsonify
-from ..extensions import auth, token_serializer
-from ..extensions import limiter, handleApiPermission
-from ..extensions import cache
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, cache, record
+)
 
 catalog_api = Blueprint('catalog_api', __name__)
 
@@ -35,7 +34,10 @@ def listArtists():
         "n": "artistName"
     }
     sortMethod = request.args.get('sort', default="c", type=str)
-    sortMethod = sortDict[sortMethod] if sortMethod in sortDict.keys() else "CNT"
+    if sortMethod in sortDict.keys():
+        sortMethod = sortDict[sortMethod]
+    else:
+        sortMethod = "CNT"
     order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     artistCount = g.db.get(
@@ -45,15 +47,17 @@ def listArtists():
     if extra_page > 0:
         pages += 1
     datas = g.db.get(
-        "SELECT artistID,artistName,artistDescription,groupName,"
-        + "pixivID,twitterID,mastodon,homepage,CNT,LIKES,LAST_UPDATE "
-        + "FROM info_artist NATURAL JOIN ( SELECT artistID,COUNT(artistID) AS CNT,"
-        + "SUM(illustLike) AS LIKES,"
-        + "MAX(illustID) AS LAST_UPDATE "
-        + "FROM data_illust GROUP BY artistID ) AS T1 "
-        + "WHERE artistName LIKE %s"
-        + f"ORDER BY {sortMethod} {order} "
-        + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        f"""SELECT artistID,artistName,artistDescription,groupName,
+        pixivID,twitterID,mastodon,homepage,CNT,LIKES,LAST_UPDATE
+        FROM info_artist NATURAL JOIN (
+            SELECT artistID,COUNT(artistID) AS CNT,
+            SUM(illustLike) AS LIKES,
+            MAX(illustID) AS LAST_UPDATE
+            FROM data_illust GROUP BY artistID
+        ) AS T1
+        WHERE artistName LIKE %s
+        ORDER BY {sortMethod} {order}
+        LIMIT {per_page} OFFSET {per_page*(pageID-1)}""",
         (f'%{keyword}%',)
     )
     # ないとページ番号が不正なときに爆発する
@@ -108,7 +112,10 @@ def listTags():
         "n": "tagName"
     }
     sortMethod = request.args.get('sort', default="c", type=str)
-    sortMethod = sortDict[sortMethod] if sortMethod in sortDict.keys() else "CNT"
+    if sortMethod in sortDict.keys():
+        sortMethod = sortDict[sortMethod]
+    else:
+        sortMethod = "CNT"
     order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     tagCount = g.db.get(
@@ -118,14 +125,14 @@ def listTags():
     if extra_page > 0:
         pages += 1
     datas = g.db.get(
-        "SELECT tagID,tagName,tagDescription,tagNsfw,CNT,LIKES,LAST_UPDATE"
-        + " FROM info_tag NATURAL JOIN ( SELECT tagID, COUNT(tagID) AS CNT,"
-        + " MAX(illustID) AS LAST_UPDATE FROM data_tag NATURAL JOIN info_tag"
-        + " GROUP BY tagID) AS T1 NATURAL JOIN"
-        + " ( SELECT tagID, SUM(illustLike) AS LIKES FROM data_illust"
-        + " NATURAL JOIN data_tag GROUP BY tagID ) AS T2"
-        + f" WHERE tagName LIKE %s ORDER BY {sortMethod} {order}"
-        + f" LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        f"""SELECT tagID,tagName,tagDescription,tagNsfw,CNT,LIKES,LAST_UPDATE
+        FROM info_tag NATURAL JOIN ( SELECT tagID, COUNT(tagID) AS CNT,
+        MAX(illustID) AS LAST_UPDATE FROM data_tag NATURAL JOIN info_tag
+        GROUP BY tagID) AS T1 NATURAL JOIN
+        ( SELECT tagID, SUM(illustLike) AS LIKES FROM data_illust
+        NATURAL JOIN data_tag GROUP BY tagID ) AS T2
+        WHERE tagName LIKE %s ORDER BY {sortMethod} {order}
+        LIMIT {per_page} OFFSET {per_page*(pageID-1)}""",
         (f'%{keyword}%', )
     )
     # ないとページ番号が不正なときに爆発する
@@ -176,26 +183,30 @@ def listCharacters():
         "n": "tagName"
     }
     sortMethod = request.args.get('sort', default="c", type=str)
-    sortMethod = sortDict[sortMethod] if sortMethod in sortDict.keys() else "CNT"
+    if sortMethod in sortDict.keys():
+        sortMethod = sortDict[sortMethod]
+    else:
+        sortMethod = "CNT"
     order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     tagCount = g.db.get(
-        "SELECT COUNT(DISTINCT tagID) FROM data_tag NATURAL JOIN info_tag WHERE tagType = 1"
+        """SELECT COUNT(DISTINCT tagID) FROM data_tag
+        NATURAL JOIN info_tag WHERE tagType = 1"""
     )[0][0]
     pages, extra_page = divmod(tagCount, per_page)
     if extra_page > 0:
         pages += 1
     datas = g.db.get(
-        "SELECT tagID,tagName,tagDescription,tagNsfw,"
-        + " CNT,LIKES,LAST_UPDATE FROM info_tag"
-        + " NATURAL JOIN ( SELECT tagID, COUNT(tagID) AS CNT,"
-        + " MAX(illustID) AS LAST_UPDATE FROM data_tag"
-        + " NATURAL JOIN info_tag GROUP BY tagID) AS T1"
-        + " NATURAL JOIN ( SELECT tagID, SUM(illustLike) AS LIKES"
-        + " FROM data_illust NATURAL JOIN data_tag GROUP BY tagID ) AS T2"
-        + " WHERE tagType=1 AND tagName LIKE %s"
-        + f" ORDER BY {sortMethod} {order}"
-        + f" LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        f"""SELECT tagID,tagName,tagDescription,tagNsfw,
+        CNT,LIKES,LAST_UPDATE FROM info_tag
+        NATURAL JOIN ( SELECT tagID, COUNT(tagID) AS CNT,
+        MAX(illustID) AS LAST_UPDATE FROM data_tag
+        NATURAL JOIN info_tag GROUP BY tagID) AS T1
+        NATURAL JOIN ( SELECT tagID, SUM(illustLike) AS LIKES
+        FROM data_illust NATURAL JOIN data_tag GROUP BY tagID ) AS T2
+        WHERE tagType=1 AND tagName LIKE %s
+        ORDER BY {sortMethod} {order}
+        LIMIT {per_page} OFFSET {per_page*(pageID-1)}""",
         (f'%{keyword}%', )
     )
     # ないとページ番号が不正なときに爆発する
@@ -245,7 +256,10 @@ def listUploaders():
         "n": "userName"
     }
     sortMethod = request.args.get('sort', default="c", type=str)
-    sortMethod = sortDict[sortMethod] if sortMethod in sortDict.keys() else "CNT"
+    if sortMethod in sortDict.keys():
+        sortMethod = sortDict[sortMethod]
+    else:
+        sortMethod = "CNT"
     order = request.args.get('order', default="d", type=str)
     order = "DESC" if order == "d" else "ASC"
     uploaderCount = g.db.get(
@@ -255,14 +269,14 @@ def listUploaders():
     if extra_page > 0:
         pages += 1
     datas = g.db.get(
-        "SELECT userID,userName, CNT,LIKES,LAST_UPDATE "
-        + "FROM data_user NATURAL JOIN ( SELECT userID,COUNT(userID) AS CNT, "
-        + "SUM(illustLike) AS LIKES, "
-        + "MAX(illustID) AS LAST_UPDATE "
-        + "FROM data_illust GROUP BY userID ) AS T1 "
-        + "WHERE userName LIKE %s"
-        + f"ORDER BY {sortMethod} {order} "
-        + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
+        f"""SELECT userID,userName, CNT,LIKES,LAST_UPDATE
+        FROM data_user NATURAL JOIN ( SELECT userID,COUNT(userID) AS CNT,
+        SUM(illustLike) AS LIKES,
+        MAX(illustID) AS LAST_UPDATE
+        FROM data_illust GROUP BY userID ) AS T1
+        WHERE userName LIKE %s
+        ORDER BY {sortMethod} {order}
+        LIMIT {per_page} OFFSET {per_page*(pageID-1)}""",
         (f'%{keyword}%',)
     )
     # ないとページ番号が不正なときに爆発する

@@ -1,7 +1,7 @@
 from flask import Flask, g, request, jsonify, Blueprint, current_app
-from ..extensions.httpauth import auth
-from ..extensions import limiter, handleApiPermission
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, record
+)
 from ..scraper_lib.onesignal_client import OneSignalWrappedClient
 
 notify_api = Blueprint('notify_api', __name__)
@@ -33,9 +33,15 @@ def initOneSignalNotify():
     """
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     if "id" not in params.keys():
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     # まず現状のデータをとってくる
     resp = g.db.get(
         "SELECT userOneSignalID FROM data_user WHERE userID=%s",
@@ -58,7 +64,11 @@ def initOneSignalNotify():
         return jsonify(status=400, message="Maximum devices exceeded.")
 
 
-@notify_api.route('/setting/onesignal', methods=["DELETE"], strict_slashes=False)
+@notify_api.route(
+    '/setting/onesignal',
+    methods=["DELETE"],
+    strict_slashes=False
+)
 @auth.login_required
 @limiter.limit(handleApiPermission)
 def resetOneSignalNotify():
@@ -78,17 +88,25 @@ def resetOneSignalNotify():
 def addNotify():
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     if "type" not in params.keys()\
             or "id" not in params.keys()\
             or "method" not in params.keys():
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     try:
         params = {p: int(params[p]) for p in params.keys()}
-    except Exception as e:
+    except:
         return jsonify(status=400, message="Request parameters are invalid.")
     resp = g.db.edit(
-        "INSERT INTO data_notify (userID, targetType, targetID, targetMethod) VALUES (%s,%s,%s,%s)",
+        """INSERT INTO data_notify
+        (userID, targetType, targetID, targetMethod)
+        VALUES (%s,%s,%s,%s)""",
         (g.userID, params["type"], params["id"], params["method"])
     )
     if resp:
@@ -101,7 +119,7 @@ def addNotify():
                 "SELECT userOneSignalID FROM data_user WHERE userID=%s",
                 (g.userID,)
             )[0][0]
-            recordApiRequest(g.userID, "addNotify", param1=createdID)
+            record(g.userID, "addNotify", param1=createdID)
             if userOneSignalID:
                 userOneSignalID = userOneSignalID.split(",")
                 cl = OneSignalWrappedClient(
@@ -124,29 +142,39 @@ def addNotify():
 def deleteNotify():
     params = request.get_json()
     if not params:
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     if "type" not in params.keys()\
             or "id" not in params.keys()\
             or "method" not in params.keys():
-        return jsonify(status=400, message="Request parameters are not satisfied.")
+        return jsonify(
+            status=400,
+            message="Request parameters are not satisfied."
+        )
     try:
         params = {p: int(params[p]) for p in params.keys()}
-    except Exception as e:
+    except:
         return jsonify(status=400, message="Request parameters are invalid.")
     # 存在するか確認
     resp = g.db.get(
-        "SELECT notifyID FROM data_notify WHERE userID=%s AND targetType=%s AND targetID=%s AND targetMethod=%s",
+        """SELECT notifyID FROM data_notify
+        WHERE userID=%s AND targetType=%s
+        AND targetID=%s AND targetMethod=%s""",
         (g.userID, params["type"], params["id"], params["method"])
     )
     if not len(resp):
         return jsonify(status=404, message="The notify was not found.")
     # 存在するなら削除
     resp = g.db.edit(
-        "DELETE FROM data_notify WHERE userID=%s AND targetType=%s AND targetID=%s AND targetMethod=%s",
+        """DELETE FROM data_notify
+        WHERE userID=%s AND targetType=%s
+        AND targetID=%s AND targetMethod=%s""",
         (g.userID, params["type"], params["id"], params["method"])
     )
     if resp:
-        recordApiRequest(
+        record(
             g.userID,
             "removeNotify",
             param1=params["type"],
@@ -166,7 +194,7 @@ def findNotify():
     targetType = request.args.get('type', default=None, type=int)
     targetID = request.args.get('id', default=None, type=int)
     targetMethod = request.args.get('method', default=None, type=int)
-    recordApiRequest(
+    record(
         g.userID,
         "findNotify",
         param1=targetType,
@@ -193,7 +221,7 @@ def findsNotify():
     '''通知が設定されているか確認'''
     targetType = request.args.get('type', default=None, type=int)
     targetID = request.args.get('id', default=None, type=int)
-    recordApiRequest(
+    record(
         g.userID,
         "findsNotify",
         param1=targetType,
@@ -240,7 +268,7 @@ def listNotify():
         + f"LIMIT {per_page} OFFSET {per_page*(pageID-1)}",
         (g.userID,)
     )
-    recordApiRequest(
+    record(
         g.userID,
         "listNotify",
         param1=per_page,

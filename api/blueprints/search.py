@@ -1,8 +1,7 @@
 from flask import Blueprint, g, request, jsonify, escape
-from ..extensions import auth
-from ..extensions import limiter, handleApiPermission
-from ..extensions import cache
-from .recorder import recordApiRequest
+from ..extensions import (
+    auth, limiter, handleApiPermission, cache, record
+)
 from ..scraper_lib.saucenao_client import SauceNaoImageSearch
 from ..scraper_lib.ascii2d_client import Ascii2dImageSearch
 import json
@@ -426,9 +425,9 @@ def searchByImageAtAscii2d():
             message='ok',
             data={
                 'url': result["color"]["url"],
-                'result': result["color"]["result"][:2]\
-                    + result["bovw"]["result"][:2]\
-                    + result["color"]["result"][2:4]\
+                'result': result["color"]["result"][:2]
+                    + result["bovw"]["result"][:2]
+                    + result["color"]["result"][2:4]
                     + result["bovw"]["result"][2:4]
             }
         )
