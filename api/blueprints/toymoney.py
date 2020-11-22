@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv(verbose=True, override=True)
 
 toymoney_api = Blueprint('toymoney_api', __name__)
-TOYMONEY_ENDPOINT = environ.get('API_TOYMONEY_ENDPOINT')
+TOYMONEY_ENDPOINT = environ.get('TOYMONEY_ENDPOINT')
 
 
 @toymoney_api.route(
