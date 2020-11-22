@@ -109,3 +109,4 @@ blueprints/*.json
 static/illusts/
 db_data
 api_data
+auth/

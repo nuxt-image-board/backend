@@ -3,8 +3,15 @@ from ..extensions import (
     auth, limiter, handleApiPermission, record
 )
 from ..scraper_lib.onesignal_client import OneSignalWrappedClient
+from os import environ
+from dotenv import load_dotenv
+
+# .env読み込み
+load_dotenv(verbose=True, override=True)
 
 notify_api = Blueprint('notify_api', __name__)
+ONESIGNAL_APPID = environ.get('API_ONESIGNAL_APPID')
+ONESIGNAL_TOKEN = environ.get('API_ONESIGNAL_TOKEN')
 
 
 @notify_api.route('/setting/line', methods=["POST"], strict_slashes=False)
@@ -123,8 +130,8 @@ def addNotify():
             if userOneSignalID:
                 userOneSignalID = userOneSignalID.split(",")
                 cl = OneSignalWrappedClient(
-                    current_app.config['onesignalAppId'],
-                    current_app.config['onesignalToken']
+                    ONESIGNAL_APPID,
+                    ONESIGNAL_TOKEN
                 )
                 cl.sendNotify(
                     userOneSignalID,

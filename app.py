@@ -35,10 +35,6 @@ def createApp():
     app.config['JSON_AS_ASCII'] = False
     app.config['JSON_SORT_KEYS'] = False
     app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
-    app.config['ILLUST_FOLDER'] = 'static/illusts'
-    app.config['TEMP_FOLDER'] = 'static/temp'
-    app.config['onesignalAppId'] = environ.get('API_ONESIGNAL_APPID')
-    app.config['onesignalToken'] = environ.get('API_ONESIGNAL_TOKEN')
     # 各ページルールを登録
     app.add_url_rule('/', 'index', app_index, strict_slashes=False)
     app.add_url_rule('/favicon.ico', 'favicon.ico', app_favicon)
@@ -88,4 +84,4 @@ app = createApp()
 
 if __name__ == '__main__':
     app.debug = True
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5000)
