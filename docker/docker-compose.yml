@@ -9,11 +9,20 @@ services:
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
     volumes:
       - ${VOLUME_DB_PATH}:/var/lib/mysql:delegated
+    ports:
+      - ${PORT_DB}:3306
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT}
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASS}
+  redis:
+    container_name: gcir_redis
+    hostname: redis
+    image: redis:latest
+    restart: always
+    ports:
+      - ${PORT_REDIS}:6379
   adminer:
     container_name: gcir_adminer
     hostname: adminer
@@ -24,7 +33,9 @@ services:
     depends_on:
       - db
   api:
-    build: .Dockerfile_amd64
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile_amd64
     container_name: gcir_api
     volumes:
       - ${VOLUME_API_PATH}:/usr/local/app/static
@@ -32,3 +43,13 @@ services:
       - ${PORT_API}:5000
     depends_on:
       - db
+      - redis
+  worker:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile_worker
+    container_name: gcir_worker
+    volumes:
+      - ${VOLUME_API_PATH}:/usr/local/app
+    depends_on:
+      - redis

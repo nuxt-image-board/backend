@@ -1,20 +1,9 @@
-# Flask and extensions
-Flask==1.1.2
-Flask-Caching==1.9.0
-Flask-Cors==3.0.8
-Flask-Limiter==1.2.1
-Flask-HTTPAuth==3.3.0
 # Authorization
-PyJWT==1.4.2
-hashids==1.2.0
 itsdangerous==0.24
-# Image search
-ImageHash==4.0
 # Image process
+ImageHash==4.0
 Pillow==7.1.1
 hurry.filesize==0.9
-# Server runner
-gunicorn==20.0.4
 # Database
 mysql-connector-python==8.0.19
 redis==3.4.1
