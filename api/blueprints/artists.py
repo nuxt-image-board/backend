@@ -50,14 +50,16 @@ def addArtist():
     homepage = params.get('homepage', None)
     userID = g.userID
     resp = g.db.edit(
-        "INSERT INTO `info_artist`(`userID`,`artistName`,`artistDescription`,`groupName`,`pixivID`,`twitterID`,`mastodon`,`homepage`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);",
+        """INSERT INTO info_artist
+        (userID,artistName,artistDescription,groupName,pixivID,twitterID,mastodon,homepage)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
         (userID, artistName, artistDescription, groupName,
          pixivID, twitterID, mastodon, homepage)
     )
     if resp:
         createdID = g.db.get(
-            "SELECT artistID FROM info_artist WHERE artistName = %s", (
-                artistName,)
+            "SELECT artistID FROM info_artist WHERE artistName = %s",
+            (artistName,)
         )[0][0]
         record(userID, "addArtist", param1=createdID)
         return jsonify(status=201, message="Created", artistID=createdID)
