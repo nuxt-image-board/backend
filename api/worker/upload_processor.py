@@ -244,7 +244,12 @@ class UploadProcessor():
 
     def sendIllustInfoNotify(self, illust_id):
         """イラスト情報の登録完了を通知"""
-        notifier = NotifyClient(self.conn)
+        notifier = NotifyClient(
+            self.conn,
+            self.params["onesignal"][0],
+            self.params["onesignal"][1],
+            self.params["telegram"]
+        )
         notifier.sendArtNotify(illust_id)
         return True
 
