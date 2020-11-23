@@ -466,7 +466,7 @@ def searchByImage():
             FROM `data_illust`
             INNER JOIN info_artist
             ON info_artist.artistID = data_illust.artistID
-            HAVING SAME < 5 AND illustStatus=0 ORDER BY SAME DESC LIMIT 10"""
+            HAVING SAME < 5 AND illustStatus=0 ORDER BY SAME DESC LIMIT 10""",
             (hash,)
         )
         if len(illusts):
