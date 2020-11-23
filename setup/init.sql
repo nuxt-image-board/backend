@@ -2,7 +2,7 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
 CREATE TABLE `data_comment` (
-  `commentID` int(11) NOT NULL,
+  `commentID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `commentBody` varchar(500) NOT NULL,
   `commentCreated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `commentUpdated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -11,7 +11,7 @@ CREATE TABLE `data_comment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_illust` (
-  `illustID` int(11) NOT NULL,
+  `illustID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `userID` int(11) DEFAULT NULL,
   `artistID` int(11) DEFAULT NULL,
   `illustName` varchar(50) DEFAULT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE `data_illust` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_invite` (
-  `inviteID` int(11) NOT NULL,
+  `inviteID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `inviter` int(11) DEFAULT NULL,
   `invitee` int(11) DEFAULT NULL,
   `inviteCode` varchar(10) DEFAULT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE `data_invite` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_log` (
-  `logID` int(11) NOT NULL,
+  `logID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `userID` int(11) DEFAULT NULL,
   `logType` int(11) DEFAULT NULL,
   `logDate` datetime DEFAULT NULL,
@@ -56,20 +56,20 @@ CREATE TABLE `data_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_mute` (
-  `muteID` int(11) NOT NULL,
+  `muteID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `userID` int(11) NOT NULL,
   `targetType` int(11) NOT NULL COMMENT '0=未使用, 1=タグ(キャラ含む), 2=絵師',
   `targetID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_mylist` (
-  `mylistID` int(11) NOT NULL,
+  `mylistID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `illustID` int(11) NOT NULL,
   `mylistAddedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_news` (
-  `newsID` int(11) NOT NULL,
+  `newsID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `newsDate` datetime DEFAULT CURRENT_TIMESTAMP,
   `newsColor` tinyint(4) DEFAULT '0' COMMENT '0=お知らせ 1=メモ 2=アプデ 3=告知 4=重要',
   `newsTitle` varchar(50) DEFAULT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE `data_news` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_notify` (
-  `notifyID` int(11) NOT NULL,
+  `notifyID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `userID` int(11) NOT NULL,
   `targetType` tinyint(4) NOT NULL COMMENT '0=全部 1=タグ(キャラ含む) 2=絵師',
   `targetID` int(11) DEFAULT NULL COMMENT '通知対象のID',
@@ -85,7 +85,7 @@ CREATE TABLE `data_notify` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_ranking` (
-  `rankingID` int(11) NOT NULL,
+  `rankingID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `rankingYear` smallint(4) NOT NULL,
   `rankingMonth` tinyint(2) NOT NULL,
   `rankingDay` tinyint(2) NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE `data_ranking` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_replace` (
-  `replaceID` int(11) NOT NULL,
+  `replaceID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `illustReplaceDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `illustGreaterID` int(11) NOT NULL,
   `illustLowerID` int(11) NOT NULL
@@ -108,7 +108,7 @@ CREATE TABLE `data_tag` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_upload` (
-  `uploadID` int(11) NOT NULL,
+  `uploadID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `uploadStartedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `uploadFinishedDate` timestamp NULL DEFAULT NULL,
   `uploadStatus` tinyint(4) NOT NULL COMMENT '1=処理開始,2=Thumb作成,3=Large作成,4=Small作成,8=画像重複,5=終了,9=鯖爆発',
@@ -117,7 +117,7 @@ CREATE TABLE `data_upload` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_user` (
-  `userID` int(11) NOT NULL,
+  `userID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `userDisplayID` varchar(20) DEFAULT NULL,
   `userTwitterID` varchar(20) DEFAULT NULL,
   `userLineID` varchar(50) DEFAULT NULL,
@@ -135,14 +135,14 @@ CREATE TABLE `data_user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_view` (
-  `viewHistoryID` int(11) NOT NULL,
+  `viewHistoryID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `userID` int(11) NOT NULL,
   `illustID` int(11) NOT NULL,
   `last_view` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `data_wiki` (
-  `articleID` int(11) NOT NULL,
+  `articleID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `articleTitle` varchar(50) NOT NULL,
   `articleBody` varchar(3000) NOT NULL,
   `targetType` int(11) NOT NULL COMMENT '0=ユーザー, 1=タグ, 2=絵師',
@@ -153,7 +153,7 @@ CREATE TABLE `data_wiki` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `info_artist` (
-  `artistID` int(11) NOT NULL,
+  `artistID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `userID` int(11) DEFAULT NULL,
   `artistName` varchar(50) NOT NULL,
   `artistDescription` varchar(200) DEFAULT NULL,
@@ -165,7 +165,7 @@ CREATE TABLE `info_artist` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `info_mylist` (
-  `mylistID` int(11) NOT NULL,
+  `mylistID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `userID` int(11) DEFAULT NULL,
   `mylistName` varchar(30) DEFAULT NULL,
   `mylistDescription` varchar(300) DEFAULT NULL,
@@ -175,7 +175,7 @@ CREATE TABLE `info_mylist` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `info_tag` (
-  `tagID` int(11) NOT NULL,
+  `tagID` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `userID` int(11) DEFAULT NULL,
   `tagType` tinyint(4) DEFAULT NULL COMMENT '0=タグ,1=キャラ,2=グループ,3=システム',
   `tagName` varchar(50) DEFAULT NULL,

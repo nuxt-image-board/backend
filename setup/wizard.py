@@ -10,7 +10,7 @@ load_dotenv(verbose=True, override=True)
 
 
 def getUserInput(variable_name, default=None):
-    user_input = input("Input {variable_name} (Default: {default})>>")
+    user_input = input(f"Input {variable_name} (Default: {default})>>")
     if user_input == "":
         return default
     else:
@@ -39,8 +39,8 @@ class NuxtImageBoardSetup():
 
     def createDatabase(self):
         with open("init.sql", "r", encoding="utf8") as f:
-            self.cursor.execute(f.read())
-        self.cursor.commit()
+            self.cursor.execute(f.read(), multi=True)
+        self.conn.commit()
         return True
 
     def createSubApiUser(self, display_id="nib_admin"):
@@ -72,7 +72,7 @@ class NuxtImageBoardSetup():
             WHERE userID=%s""",
             (token, accountID)
         )
-        self.cursor.commit()
+        self.conn.commit()
         return token
 
     def createMainApiUser(
@@ -90,7 +90,7 @@ class NuxtImageBoardSetup():
         self.cursor.execute(
             """INSERT INTO data_user
             (userDisplayID, userName, userPassword,
-            userToyApiKey, userApiPermission)
+            userToyApiKey, userPermission)
             VALUES (%s,%s,%s,%s,%s)""",
             (display_id, username, password, toyapi_key, permission)
         )
@@ -110,7 +110,7 @@ class NuxtImageBoardSetup():
             VALUES (%s,%s,%s)""",
             (f"{username}のマイリスト", "", user_id)
         )
-        self.cursor.commit()
+        self.conn.commit()
         return user_id, api_key
 
     def createInvitation(self, user_id, invite_code="RANDOM", code_count=1):
@@ -160,10 +160,10 @@ if __name__ == "__main__":
             print("Create database success!")
         elif op_type == 2:
             print("Creating user...")
-            display_id = input("display id", "nib_admin")
-            username = input("username", "nib_admin")
-            password = input("password", "nib_admin")
-            permission = input("permission", "9")
+            display_id = getUserInput("display id", "nib_admin")
+            username = getUserInput("username", "nib_admin")
+            password = getUserInput("password", "nib_admin")
+            permission = getUserInput("permission", "9")
             toyapi_key = cl.createSubApiUser(display_id)
             user_id, api_key = cl.createMainApiUser(
                 toyapi_key,
@@ -177,9 +177,9 @@ if __name__ == "__main__":
             print(f"Api key: {api_key}")
         elif op_type == 3:
             print("Creating invite...")
-            user_id = input("user id", "1")
-            invite_code = input("invite code", "RANDOM")
-            code_count = input("code count", "1")
+            user_id = int(getUserInput("user id", "1"))
+            invite_code = getUserInput("invite code", "RANDOM")
+            code_count = int(getUserInput("code count", "1"))
             codes = cl.createInvitation(
                 user_id,
                 invite_code,
@@ -187,7 +187,7 @@ if __name__ == "__main__":
             )
             print("Create invite success!")
             print("Invite codes:")
-            print("".join(codes))
+            print("\n".join(codes))
         else:
             print("Bye")
             break
