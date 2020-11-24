@@ -97,10 +97,12 @@ def createAccount():
     password = SALT_PASS+password
     password = hashlib.sha256(password.encode("utf8")).hexdigest()
     # ToyMoneyServerにリクエストする
-    # TODO: fix f-string!!
     toyApiResp = requests.post(
         TOYMONEY_ENDPOINT + "/users/create",
-        json={"name": displayID, "password": "***REMOVED***{displayID}"}
+        json={
+            "name": displayID,
+            "password": f"{TOYMONEY_PASSWORD_HEAD}{displayID}"
+        }
     )
     if toyApiResp.status_code != 200:
         return jsonify(status=500, message="Server bombed.")
