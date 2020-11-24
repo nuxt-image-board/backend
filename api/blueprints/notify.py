@@ -2,7 +2,7 @@ from flask import Flask, g, request, jsonify, Blueprint, current_app
 from ..extensions import (
     auth, limiter, handleApiPermission, record
 )
-from ..scraper_lib.onesignal_client import OneSignalWrappedClient
+from ..notifies.onesignal_client import OneSignalWrappedClient
 from os import environ
 from dotenv import load_dotenv
 

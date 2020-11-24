@@ -1,7 +1,7 @@
 from itsdangerous import JSONWebSignatureSerializer
 from .upload_logger import UploadLogger
 from .image_editor import UploadImageEditor
-from ..scraper_lib.notify_client import NotifyClient
+from ..notifies.notify_client import NotifyClient
 import requests
 import os
 
