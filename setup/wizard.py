@@ -20,6 +20,7 @@ def getUserInput(variable_name, default=None):
 class NuxtImageBoardSetup():
     TOYMONEY_PASSWORD_HEAD = environ.get('TOYMONEY_PASSWORD_HEAD')
     TOYMONEY_ENDPOINT = environ.get('TOYMONEY_ENDPOINT')
+    TOYMONEY_TOKEN = environ.get('TOYMONEY_TOKEN')
     SALT_INVITE = environ.get('SALT_INVITE')
     SALT_PASS = environ.get('SALT_PASS')
     SALT_JWT = environ.get('SALT_JWT')
@@ -49,11 +50,15 @@ class NuxtImageBoardSetup():
             json={
                 "name": display_id,
                 "password": f"{self.TOYMONEY_PASSWORD_HEAD}{display_id}"
+            },
+            headers={
+                "Authorization": f"Bearer {self.TOYMONEY_TOKEN}"
             }
         )
         if toyApiResp.status_code != 200:
             raise Exception("ToyMoneyへのリクエストに失敗しました")
-        return toyApiResp.json()["apiKey"]
+        resp = toyApiResp.json()
+        return resp["apiKey"]
 
     def generateApiKey(self, accountID):
         self.cursor.execute(
