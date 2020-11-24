@@ -2,8 +2,6 @@ from flask import Blueprint, g, request, jsonify, escape
 from ..extensions import (
     auth, limiter, handleApiPermission, cache, record
 )
-from ..scraper_lib.saucenao_client import SauceNaoImageSearch
-from ..scraper_lib.ascii2d_client import Ascii2dImageSearch
 import json
 from PIL import Image
 import imagehash
@@ -13,12 +11,7 @@ from uuid import uuid4
 import os.path
 from imghdr import what as what_img
 from imghdr import tests
-from os import environ
-from dotenv import load_dotenv
-load_dotenv(verbose=True, override=True)
 
-IMGUR_TOKEN = environ.get('API_IMGUR_TOKEN')
-SAUCENAO_TOKEN = environ.get('API_SAUCENAO_TOKEN')
 ALLOWED_EXTENSIONS = ["gif", "png", "jpg", "jpeg", "webp"]
 
 JPEG_MARK = b'\xff\xd8\xff\xdb\x00C\x00\x08\x06\x06' \
@@ -358,79 +351,6 @@ def searchByRandom():
             } for illust in illusts]
         }
     )
-
-
-@search_api.route('/image/saucenao', methods=["POST"], strict_slashes=False)
-@auth.login_required
-@limiter.limit(handleApiPermission)
-def searchByImageAtSauceNao():
-    if g.userPermission not in [0, 9]:
-        return jsonify(status=400, message="Bad request")
-    if "file" not in request.files:
-        return jsonify(status=400, message="File must be included")
-    file = request.files['file']
-    # ファイル拡張子確認
-    if isNotAllowedFile(file.filename):
-        return jsonify(status=400, message="The file is not allowed")
-    with TemporaryDirectory() as temp_path:
-        # 画像を一旦保存して確認
-        uniqueID = str(uuid4()).replace("-", "")
-        uniqueID = b64encode(uniqueID.encode("utf8")).decode("utf8")[:-1]
-        tempPath = os.path.join(temp_path, uniqueID)
-        file.save(tempPath)
-        fileExt = what_img(tempPath)
-        if not fileExt:
-            return jsonify(status=400, message="The file is not allowed")
-        cl = SauceNaoImageSearch(
-            IMGUR_TOKEN,
-            SAUCENAO_TOKEN
-        )
-        result = cl.search(tempPath)
-        return jsonify(
-            status=200,
-            message='ok',
-            data={
-                'result': result
-            }
-        )
-
-
-@search_api.route('/image/ascii2d', methods=["POST"], strict_slashes=False)
-@auth.login_required
-@limiter.limit(handleApiPermission)
-def searchByImageAtAscii2d():
-    if g.userPermission not in [0, 9]:
-        return jsonify(status=400, message="Bad request")
-    if "file" not in request.files:
-        return jsonify(status=400, message="File must be included")
-    file = request.files['file']
-    # ファイル拡張子確認
-    if isNotAllowedFile(file.filename):
-        return jsonify(status=400, message="The file is not allowed")
-    with TemporaryDirectory() as temp_path:
-        # 画像を一旦保存して確認
-        uniqueID = str(uuid4()).replace("-", "")
-        uniqueID = b64encode(uniqueID.encode("utf8")).decode("utf8")[:-1]
-        tempPath = os.path.join(temp_path, uniqueID)
-        file.save(tempPath)
-        fileExt = what_img(tempPath)
-        if not fileExt:
-            return jsonify(status=400, message="The file is not allowed")
-        cl = Ascii2dImageSearch(
-            IMGUR_TOKEN
-        )
-        result = cl.search(tempPath)
-        return jsonify(
-            status=200,
-            message='ok',
-            data={
-                'url': result["color"]["url"],
-                'result': result["color"]["result"][:2]
-                    + result["bovw"]["result"][:2]
-                    + result["color"]["result"][2:4]
-                    + result["bovw"]["result"][2:4]
-            }
-        )
 
 
 @search_api.route('/image', methods=["POST"], strict_slashes=False)
