@@ -110,3 +110,5 @@ static/illusts/
 db_data
 api_data
 auth/
+docker/toydb_data/*
+docker/db_data/*
