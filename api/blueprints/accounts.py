@@ -49,14 +49,7 @@ def generateApiKey(accountID):
 
 
 @accounts_api.route('/', methods=["POST"], strict_slashes=False)
-@auth.login_required
 def createAccount():
-    # Web管理者権限以上を要求
-    if g.userPermission < 5:
-        return jsonify(
-            status=403,
-            message="You don't have enough permissions."
-        )
     # 入力チェック
     params = request.get_json()
     if not params:
@@ -589,6 +582,18 @@ def getUploadHistory(accountID):
     uploadCount = g.db.get(
         f"SELECT COUNT(uploadID) FROM data_upload WHERE userID={accountID}"
     )
+    if not uploadCount and g.userID == accountID:
+        return jsonify(
+            status=200,
+            message="ok",
+            data={
+                "title": "アップロード履歴",
+                "count": 0,
+                "current": 1,
+                "pages": 1,
+                "contents": []
+            }
+        )
     if not uploadCount or accountID in [0, 1]:
         return jsonify(status=404, message="The account data was not found.")
     uploadCount = uploadCount[0][0]
