@@ -113,7 +113,17 @@ def getSearchResult(whereSql, illustCount, resultTitle, placeholder=()):
     )
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
-        return jsonify(status=404, message="No matched illusts.")
+        return jsonify(
+            status=200,
+            message="not found",
+            data={
+                "title": resultTitle,
+                "count": illustCount,
+                "current": pageID,
+                "pages": pages,
+                "imgs": []
+            }
+        )
     illustIDs = [i[0] for i in illusts]
     # マイリストされた回数を気合で取ってくる
     mylistDict = getMylistCountDict(illustIDs)
@@ -324,7 +334,13 @@ def searchByRandom():
            AND illustNsfw={acceptNsfw} ORDER BY RAND() LIMIT {count}"""
         )
     if not illusts:
-        return jsonify(404, message="No matched arts.")
+        return jsonify(
+            status=200,
+            message="not found",
+            data={
+                "imgs": []
+            }
+        )
     illustIDs = [i[0] for i in illusts]
     # マイリストされた回数を気合で取ってくる
     mylistDict = getMylistCountDict(illustIDs)
