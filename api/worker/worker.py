@@ -50,25 +50,28 @@ def registerIllust(params):
         )
         real_orig_path = orig_path
         # 何枚目の画像を保存するかはURLパラメータで見る
-        if "?" in origin_url and params["own_address"] not in origin_url:
+        if "?" in origin_url:
             origin_url = origin_url[:origin_url.find("?")]
         # ローカルから取る場合
         shutil.move(
             origin_url[origin_url.find("/static/temp/")+1:],
             orig_path
         )
-        # 保存した画像を入力
-        processor.setImageSource(orig_path)
         # 正しい拡張子を取得(不正なデータならここでエラーが返る)
-        extension = processor.getIllustExtension()
+        extension = processor.getIllustExtension(orig_path)
+        # 正しい拡張子に変更して移動
         real_orig_path = orig_path.replace("raw", extension)
         shutil.move(
             orig_path,
             real_orig_path
         )
+        # 基準となる画像をセット
+        processor.setImageSource(real_orig_path)
+        # 画像を変換
+        processor.createIllustImage(illust_id, "static/illusts")
         # 解像度/ハッシュ/拡張子/ファイルサイズを登録
         filesize = os.path.getsize(real_orig_path)
-        processor.registerIllustImageInfo(illust_id, filesize)
+        processor.registerIllustImageInfo(illust_id, filesize, extension)
         # イラストタグを登録
         processor.registerIllustTags(illust_id)
         # 変換完了を記録

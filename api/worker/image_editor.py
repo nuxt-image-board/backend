@@ -31,13 +31,13 @@ class UploadImageEditor():
     def getImageHash(self):
         return int(str(phash(self.orig)), 16)
 
-    def getImageExtension(self):
-        return self.orig.format.lower().replace("jpeg", "jpg")
+    def getImageExtension(self, img_src):
+        img = Image.open(img_src)
+        return img.format.lower().replace("jpeg", "jpg")
 
     def createOrig(self, img_src):
-        # PNG/WEBPに変換する
-        imgObj = Image.open(img_src).convert("RGB")
-        return imgObj
+        # PNG/WEBPに変換する(変換するとformatは取れなくなる)
+        return Image.open(img_src).convert("RGB")
 
     def createLarge(self):
         # 1280x960ぐらいに縮小する

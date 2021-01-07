@@ -45,7 +45,7 @@ class UploadProcessor():
             resp = self.conn.edit(
                 """INSERT INTO info_artist
                 (artistName,twitterID,pixivID,userID)
-                VALUES (%s,%s,%s)""",
+                VALUES (%s,%s,%s,%s)""",
                 (
                     artist_name,
                     pixiv_id,
@@ -103,9 +103,9 @@ class UploadProcessor():
         """画像パスから画像を読み込む"""
         self.editor.setImageSource(image_src)
 
-    def getIllustExtension(self):
+    def getIllustExtension(self, image_src):
         """画像解像度を取得する"""
-        extension = self.editor.getImageExtension()
+        extension = self.editor.getImageExtension(image_src)
         if extension in ["png", "jpg", "gif", "webp"]:
             return extension
         else:
@@ -162,11 +162,10 @@ class UploadProcessor():
         hash = self.editor.getImageHash()
         return hash
 
-    def registerIllustImageInfo(self, illust_id, file_bytes):
+    def registerIllustImageInfo(self, illust_id, file_bytes, extension):
         """解像度/ハッシュ/拡張子/ファイルサイズを登録する"""
         width, height = self.getIllustResolution()
         hash = self.getIllustHash()
-        extension = self.getIllustExtension()
         resp = self.conn.edit(
             """UPDATE data_illust
             SET illustExtension=%s, illustHash=%s, illustBytes=%s
