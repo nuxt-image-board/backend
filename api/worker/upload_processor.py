@@ -168,7 +168,7 @@ class UploadProcessor():
         hash = self.getIllustHash()
         resp = self.conn.edit(
             """UPDATE data_illust
-            SET illustExtension=%s, illustHash=%s, illustBytes=%s
+            SET illustExtension=%s, illustHash=%s, illustBytes=%s,
             illustWidth = %s, illustHeight = %s
             WHERE illustID = %s""",
             (extension, hash, file_bytes, width, height, illust_id),
