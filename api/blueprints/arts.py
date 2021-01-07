@@ -884,7 +884,7 @@ def addArtLikeWithType(illustID, likeType):
             (g.userID,)
         )[0][0]
         resp = requests.post(
-            "http://localhost:7070/users/assets/use",
+            f"{TOYMONEY_ENDPOINT}/users/assets/use",
             json={"id": likeData["product_id"], "amount": 1},
             headers={
                 "Authorization": f"Bearer {toyApiKey}"
