@@ -77,7 +77,7 @@ def registerIllust(params):
         # 変換完了を記録
         processor.registerIllustInfoCompleted(illust_id)
         # 通知を送る
-        processor.sendIllustInfoNotify(illust_id)
+        # processor.sendIllustInfoNotify(illust_id)
         # PYONを付与
         processor.givePyonToUser()
     except UploadProcessorError:
