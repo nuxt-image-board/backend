@@ -35,11 +35,11 @@ def torimochi(text):
         )
     elif request.method == "POST":
         data = request.get_json()
-            resp = requests.post(
-                TOYMONEY_ENDPOINT + path,
-                json=data,
-                headers=headers
-            )
+        resp = requests.post(
+            TOYMONEY_ENDPOINT + path,
+            json=data,
+            headers=headers
+        )
     else:
         data = request.get_json()
         resp = requests.put(
