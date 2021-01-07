@@ -1,5 +1,5 @@
 # Authorization
-itsdangerous==0.24
+itsdangerous==1.1.0
 # Image process
 ImageHash==4.0
 Pillow==7.1.1
