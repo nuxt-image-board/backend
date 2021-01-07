@@ -33,19 +33,19 @@ def torimochi(text):
             + '?' + request.query_string.decode("utf8"),
             headers=headers
         )
-    else:
+    elif request.method == "POST":
         data = request.get_json()
-        if request.method == "POST":
             resp = requests.post(
                 TOYMONEY_ENDPOINT + path,
                 json=data,
                 headers=headers
             )
-        else:
-            resp = requests.put(
-                TOYMONEY_ENDPOINT + path,
-                json=data,
-                headers=headers
-            )
+    else:
+        data = request.get_json()
+        resp = requests.put(
+            TOYMONEY_ENDPOINT + path,
+            json=data,
+            headers=headers
+        )
     # 別サービスの応答を応答として返す
     return (resp.text, resp.status_code, resp.headers.items())
