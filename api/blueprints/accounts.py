@@ -139,9 +139,9 @@ def createAccount():
         (username+"のマイリスト", "", userID)
     )
     # 記録する
-    record(g.userID, "createAccount", param1=userID)
-    record(g.userID, "generateApiKey", param1=userID)
-    record(g.userID, "createMylist", param1=userID)
+    record(0, "createAccount", param1=userID)
+    record(0, "generateApiKey", param1=userID)
+    record(0, "createMylist", param1=userID)
     return jsonify(
         status=201,
         message="created",
