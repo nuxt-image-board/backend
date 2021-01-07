@@ -103,7 +103,17 @@ def getRankingResult(whereSql, illustCount, sortMethod):
     )
     # ないとページ番号が不正なときに爆発する
     if not len(illusts):
-        return jsonify(status=404, message="No matched illusts.")
+        return jsonify(
+            status=200,
+            message="not found",
+            data={
+                "title": "ランキング",
+                "count": 0,
+                "current": 1,
+                "pages": 1,
+                "imgs": []
+            }
+        )
     illustIDs = [i[0] for i in illusts]
     # マイリストされた回数を気合で取ってくる
     mylistDict = getMylistCountDict(illustIDs)
@@ -136,7 +146,8 @@ def getRankingResult(whereSql, illustCount, sortMethod):
                 },
                 "extension": i[12]
             } for i in illusts]
-        })
+        }
+    )
 
 
 def getRanking(whereSql, sortMethod):

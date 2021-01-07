@@ -1036,8 +1036,9 @@ def getArtComments(illustID):
     )
     if len(resp) == 0:
         return jsonify(
-            status=404,
-            message="not found"
+            status=200,
+            message="ok",
+            data=[]
         )
     if not resp:
         return jsonify(status=500, message="Server bombed.")

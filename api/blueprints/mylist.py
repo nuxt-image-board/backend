@@ -117,7 +117,17 @@ def getMylist(mylistID):
         (mylistID, )
     )
     if not len(illusts):
-        return jsonify(status=404, message="No matched illusts.")
+        return jsonify(
+            status=200,
+            message="ok",
+            data={
+                "title": mylistName,
+                "count": 0,
+                "current": 1,
+                "pages": 1,
+                "imgs": []
+            }
+        )
     illustIDs = [i[0] for i in illusts]
     # マイリストされた回数を気合で取ってくる
     mylistDict = getMylistCountDict(illustIDs)
